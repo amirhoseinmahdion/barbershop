@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import type { Environment } from "./config/env.js";
 import type { DatabaseConnection } from "./database/client.js";
 import { createAuthRouter } from "./modules/auth/auth.routes.js";
+import { createAdminSalonRouter, createProfileRouter, createPublicSalonRouter } from "./modules/salons/salon.routes.js";
 import { openApiDocument } from "./openapi.js";
 import { AppError } from "./shared/errors/app-error.js";
 
@@ -60,7 +61,7 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
   });
 
   if (database && environment) {
-    app.use("/api/v1/auth", (request, _response, next) => {
+    app.use("/api/v1", (request, _response, next) => {
       const origin = request.get("origin");
       if (request.method !== "GET" && origin && origin !== frontendOrigin) {
         return next(new AppError(403, "UNTRUSTED_ORIGIN", "The request origin is not allowed."));
@@ -68,6 +69,9 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
       next();
     });
     app.use("/api/v1/auth", createAuthRouter(database, environment));
+    app.use("/api/v1/users", createProfileRouter(database, environment));
+    app.use("/api/v1/admin", createAdminSalonRouter(database, environment));
+    app.use("/api/v1/salons", createPublicSalonRouter(database));
   }
 
   app.use((_request: Request, response: Response) => {
@@ -97,8 +101,9 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
       });
       return;
     }
-    const databaseError = error as { code?: string };
-    if (databaseError?.code === "23505") {
+    const databaseError = error as { code?: string; cause?: { code?: string } };
+    const databaseCode = databaseError?.code ?? databaseError?.cause?.code;
+    if (databaseCode === "23505") {
       response.status(409).json({
         error: { code: "RESOURCE_CONFLICT", message: "The resource already exists.", details: null },
       });

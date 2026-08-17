@@ -20,6 +20,9 @@ export const openApiDocument = {
       name: "Authentication",
       description: "Customer registration and cookie-based sessions",
     },
+    { name: "Profiles", description: "Authenticated account profiles" },
+    { name: "Salons", description: "Public salon and service discovery" },
+    { name: "Salon administration", description: "Tenant-scoped salon and service management" },
   ],
   paths: {
     "/api/v1/auth/register": {
@@ -71,6 +74,51 @@ export const openApiDocument = {
         responses: { "204": { description: "Session revoked and cookies cleared." } },
       },
     },
+    "/api/v1/users/me": {
+      patch: {
+        tags: ["Profiles"], summary: "Update the current profile", operationId: "updateCurrentProfile", security: [{ accessCookie: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/ProfileUpdate" } } } },
+        responses: { "200": { description: "Updated safe user profile.", content: { "application/json": { schema: { $ref: "#/components/schemas/AuthResponse" } } } }, "401": { $ref: "#/components/responses/Unauthorized" }, "422": { $ref: "#/components/responses/ValidationError" } },
+      },
+    },
+    "/api/v1/salons": {
+      get: {
+        tags: ["Salons"], summary: "List active salons", operationId: "listSalons",
+        parameters: [
+          { name: "audience", in: "query", schema: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] } },
+          { name: "search", in: "query", schema: { type: "string", maxLength: 100 } },
+          { name: "cursor", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 50, default: 20 } },
+        ],
+        responses: { "200": { description: "Active salons.", content: { "application/json": { schema: { $ref: "#/components/schemas/SalonList" } } } } },
+      },
+    },
+    "/api/v1/salons/{salonIdOrSlug}": {
+      get: {
+        tags: ["Salons"], summary: "Get an active salon", operationId: "getSalon",
+        parameters: [{ name: "salonIdOrSlug", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Salon detail.", content: { "application/json": { schema: { type: "object", properties: { data: { type: "object", properties: { salon: { $ref: "#/components/schemas/Salon" } } } } } } } }, "404": { description: "Salon not found." } },
+      },
+    },
+    "/api/v1/salons/{salonId}/services": {
+      get: {
+        tags: ["Salons"], summary: "List active salon services", operationId: "listSalonServices",
+        parameters: [{ name: "salonId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "200": { description: "Active services.", content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceList" } } } } },
+      },
+    },
+    "/api/v1/admin/salon": {
+      get: { tags: ["Salon administration"], summary: "Get the managed salon", operationId: "getManagedSalon", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], responses: { "200": { description: "Managed salon." }, "403": { description: "Role or assignment denied." } } },
+      patch: { tags: ["Salon administration"], summary: "Update the managed salon", operationId: "updateManagedSalon", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/SalonUpdate" } } } }, responses: { "200": { description: "Salon updated." }, "403": { description: "Role or assignment denied." }, "422": { $ref: "#/components/responses/ValidationError" } } },
+    },
+    "/api/v1/admin/services": {
+      get: { tags: ["Salon administration"], summary: "List managed services", operationId: "listManagedServices", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], responses: { "200": { description: "All managed services.", content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceList" } } } } } },
+      post: { tags: ["Salon administration"], summary: "Create a service", operationId: "createService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceWrite" } } } }, responses: { "201": { description: "Service created." }, "409": { $ref: "#/components/responses/Conflict" }, "422": { $ref: "#/components/responses/ValidationError" } } },
+    },
+    "/api/v1/admin/services/{serviceId}": {
+      patch: { tags: ["Salon administration"], summary: "Update a service", operationId: "updateService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }, { name: "serviceId", in: "path", required: true, schema: { type: "string", format: "uuid" } }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceWrite" } } } }, responses: { "200": { description: "Service updated." }, "404": { description: "Service not found." } } },
+      delete: { tags: ["Salon administration"], summary: "Deactivate a service", operationId: "deactivateService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }, { name: "serviceId", in: "path", required: true, schema: { type: "string", format: "uuid" } }], responses: { "204": { description: "Service deactivated." }, "404": { description: "Service not found." } } },
+    },
     "/health/live": {
       get: {
         tags: ["Health"],
@@ -121,6 +169,9 @@ export const openApiDocument = {
     },
   },
   components: {
+    parameters: {
+      AdminSalonId: { name: "salonId", in: "query", required: false, description: "Required only for platform administrators.", schema: { type: "string", format: "uuid" } },
+    },
     securitySchemes: {
       accessCookie: { type: "apiKey", in: "cookie", name: "salon_access" },
       refreshCookie: { type: "apiKey", in: "cookie", name: "salon_refresh" },
@@ -141,6 +192,13 @@ export const openApiDocument = {
           role: { type: "string", enum: ["CUSTOMER", "SALON_ADMIN", "SUPER_ADMIN"] },
         },
       },
+      ProfileUpdate: { type: "object", additionalProperties: false, minProperties: 1, properties: { firstName: { type: "string", maxLength: 80 }, lastName: { type: "string", maxLength: 80 }, phone: { type: ["string", "null"], maxLength: 30 }, profileImageUrl: { type: ["string", "null"], format: "uri" } } },
+      Salon: { type: "object", required: ["id", "slug", "name", "audience", "city", "countryCode", "timezone", "isActive"], properties: { id: { type: "string", format: "uuid" }, slug: { type: "string" }, name: { type: "string" }, description: { type: "string" }, audience: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] }, streetAddress: { type: "string" }, city: { type: "string" }, region: { type: ["string", "null"] }, postalCode: { type: ["string", "null"] }, countryCode: { type: "string" }, phone: { type: ["string", "null"] }, email: { type: ["string", "null"] }, timezone: { type: "string" }, isActive: { type: "boolean" } } },
+      SalonUpdate: { type: "object", additionalProperties: false, minProperties: 1, properties: { name: { type: "string" }, description: { type: "string" }, audience: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] }, streetAddress: { type: "string" }, city: { type: "string" }, region: { type: ["string", "null"] }, postalCode: { type: ["string", "null"] }, countryCode: { type: "string", pattern: "^[A-Z]{2}$" }, phone: { type: ["string", "null"] }, email: { type: ["string", "null"], format: "email" }, timezone: { type: "string" } } },
+      SalonList: { type: "object", required: ["data", "nextCursor"], properties: { data: { type: "array", items: { $ref: "#/components/schemas/Salon" } }, nextCursor: { type: ["string", "null"], format: "uuid" } } },
+      Service: { type: "object", required: ["id", "salonId", "name", "durationMinutes", "priceMinor", "currency", "isActive"], properties: { id: { type: "string", format: "uuid" }, salonId: { type: "string", format: "uuid" }, name: { type: "string" }, description: { type: "string" }, durationMinutes: { type: "integer" }, priceMinor: { type: "integer" }, currency: { type: "string" }, isActive: { type: "boolean" } } },
+      ServiceWrite: { type: "object", additionalProperties: false, properties: { name: { type: "string" }, description: { type: "string" }, durationMinutes: { type: "integer", minimum: 5, maximum: 720 }, priceMinor: { type: "integer", minimum: 1 }, currency: { type: "string", pattern: "^[A-Z]{3}$" }, isActive: { type: "boolean" } } },
+      ServiceList: { type: "object", required: ["data", "nextCursor"], properties: { data: { type: "array", items: { $ref: "#/components/schemas/Service" } }, nextCursor: { type: ["string", "null"], format: "uuid" } } },
       AuthResponse: {
         type: "object", additionalProperties: false, required: ["data"],
         properties: { data: { type: "object", additionalProperties: false, required: ["user"], properties: { user: { $ref: "#/components/schemas/User" } } } },
