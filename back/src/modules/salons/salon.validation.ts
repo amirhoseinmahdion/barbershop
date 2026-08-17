@@ -39,8 +39,10 @@ export const salonCreateSchema = z.object({
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120),
   name: requiredText(120), description: z.string().trim().max(5000).default(""),
   audience: z.enum(["MEN", "WOMEN", "UNISEX"]), streetAddress: requiredText(300),
-  city: requiredText(120), countryCode: z.string().trim().regex(/^[A-Z]{2}$/),
-  timezone: requiredText(100), phone: optionalText(30), email: z.email().toLowerCase().nullable().optional(),
+  city: requiredText(120).default("Not specified"),
+  countryCode: z.string().trim().regex(/^[A-Z]{2}$/).default("IR"),
+  timezone: requiredText(100).default("Asia/Tehran"),
+  phone: optionalText(30), email: z.email().toLowerCase().nullable().optional(),
 }).strict();
 export const adminAssignmentSchema = z.object({ phone: z.string().trim().regex(/^\+?[0-9]{7,15}$/) }).strict();
 

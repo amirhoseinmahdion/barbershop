@@ -151,9 +151,9 @@ describeSalons("profiles and salon management", () => {
     const agent = await login("+16660000004");
     const created = await agent.post("/api/v1/platform/salons").set("Origin", environment.FRONTEND_ORIGIN).send({
       slug: "platform-created", name: "Platform Created", audience: "UNISEX", streetAddress: "10 New Street",
-      city: "Tehran", countryCode: "IR", timezone: "Asia/Tehran",
     });
     expect(created.status).toBe(201);
+    expect(created.body.data.salon).toMatchObject({ city: "Not specified", countryCode: "IR", timezone: "Asia/Tehran" });
     const salonId = created.body.data.salon.id as string;
     const assigned = await agent.post(`/api/v1/platform/salons/${salonId}/admins`).set("Origin", environment.FRONTEND_ORIGIN)
       .send({ phone: "+989120000000" });
