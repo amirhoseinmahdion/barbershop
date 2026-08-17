@@ -1,0 +1,21 @@
+node_modules/
+.next/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.*.example
+front/.env.local
+back/drizzle/meta/_journal.json.tmp
+
+# Private project context: never commit these paths.
+/docs/
+AGENTS.md
+AGENTS.MD
+README.md
+README.MD
+CLAUDE.md
