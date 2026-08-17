@@ -37,3 +37,28 @@ describe("CORS", () => {
     expect(response.headers["access-control-allow-origin"]).toBeUndefined();
   });
 });
+
+describe("API documentation", () => {
+  const app = createApp({ frontendOrigin: "http://localhost:3000", readinessCheck: () => Promise.resolve() });
+
+  it("serves the OpenAPI document", async () => {
+    const response = await request(app).get("/api-docs.json");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      openapi: "3.1.0",
+      info: { title: "Hair Salon Platform API" },
+      paths: {
+        "/health/live": {},
+        "/health/ready": {},
+      },
+    });
+  });
+
+  it("serves Swagger UI", async () => {
+    const response = await request(app).get("/api-docs/");
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("Hair Salon Platform API");
+  });
+});

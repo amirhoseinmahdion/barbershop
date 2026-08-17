@@ -1,5 +1,7 @@
 import cors from "cors";
 import express, { type Express, type Request, type Response } from "express";
+import swaggerUi from "swagger-ui-express";
+import { openApiDocument } from "./openapi.js";
 
 export interface AppOptions {
   frontendOrigin: string;
@@ -19,6 +21,21 @@ export function createApp({ frontendOrigin, readinessCheck }: AppOptions): Expre
     }),
   );
   app.use(express.json({ limit: "1mb" }));
+
+  app.get("/api-docs.json", (_request: Request, response: Response) => {
+    response.status(200).json(openApiDocument);
+  });
+  app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(openApiDocument, {
+      customSiteTitle: "Hair Salon Platform API",
+      swaggerOptions: {
+        displayRequestDuration: true,
+        persistAuthorization: true,
+      },
+    }),
+  );
 
   app.get("/health/live", (_request: Request, response: Response) => {
     response.status(200).json({ status: "ok" });
