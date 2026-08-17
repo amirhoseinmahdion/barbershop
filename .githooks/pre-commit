@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+forbidden_paths=$(
+  git diff --cached --name-only |
+    grep -Ei '(^docs/|(^|/)(AGENTS|README)\.md$)' || true
+)
+
+if [ -n "$forbidden_paths" ]; then
+  echo "Commit blocked: private documentation files are staged:" >&2
+  echo "$forbidden_paths" >&2
+  echo "Unstage these files before committing." >&2
+  exit 1
+fi
