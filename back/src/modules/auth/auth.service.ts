@@ -26,24 +26,27 @@ export function createAuthService(repository: AuthRepository, environment: Envir
 
   return {
     register: async (input: RegisterInput) => {
-      if (await repository.findUserByEmail(input.email)) {
+      if (input.email && await repository.findUserByEmail(input.email)) {
         throw new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists.");
       }
+      if (await repository.findUserByPhone(input.phone)) {
+        throw new AppError(409, "PHONE_ALREADY_EXISTS", "An account with this phone number already exists.");
+      }
       const user = await repository.createCustomer({
-        email: input.email,
+        email: input.email ?? null,
         passwordHash: await bcrypt.hash(input.password, 12),
         firstName: input.firstName,
         lastName: input.lastName,
-        phone: input.phone ?? null,
+        phone: input.phone,
         role: "CUSTOMER",
       });
       if (!user) throw new AppError(500, "ACCOUNT_CREATE_FAILED", "The account could not be created.");
       return issueSession(toSafeUser(user));
     },
     login: async (input: LoginInput) => {
-      const user = await repository.findUserByEmail(input.email);
+      const user = await repository.findUserByPhone(input.phone);
       if (!user || !user.isActive || !(await bcrypt.compare(input.password, user.passwordHash))) {
-        throw new AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect.");
+        throw new AppError(401, "INVALID_CREDENTIALS", "Phone number or password is incorrect.");
       }
       return issueSession(toSafeUser(user));
     },

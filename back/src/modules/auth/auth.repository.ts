@@ -7,6 +7,7 @@ type Database = DatabaseConnection["database"];
 export function createAuthRepository(database: Database) {
   return {
     findUserByEmail: async (email: string) => database.query.users.findFirst({ where: eq(users.email, email) }),
+    findUserByPhone: async (phone: string) => database.query.users.findFirst({ where: eq(users.phone, phone) }),
     findActiveUserById: async (id: string) =>
       database.query.users.findFirst({ where: and(eq(users.id, id), eq(users.isActive, true)) }),
     createCustomer: async (values: typeof users.$inferInsert) => {

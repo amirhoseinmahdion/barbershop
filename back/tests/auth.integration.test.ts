@@ -42,10 +42,10 @@ describeAuth("authentication and role access", () => {
 
     const passwordHash = await bcrypt.hash("Password123!", 4);
     await connection.database.insert(users).values([
-      { email: "customer.auth@example.com", passwordHash, firstName: "Customer", lastName: "Auth", role: "CUSTOMER" },
-      { email: "admin.auth@example.com", passwordHash, firstName: "Salon", lastName: "Admin", role: "SALON_ADMIN" },
-      { email: "super.auth@example.com", passwordHash, firstName: "Super", lastName: "Admin", role: "SUPER_ADMIN" },
-      { email: "inactive.auth@example.com", passwordHash, firstName: "Inactive", lastName: "User", isActive: false },
+      { email: "customer.auth@example.com", phone: "+15550000001", passwordHash, firstName: "Customer", lastName: "Auth", role: "CUSTOMER" },
+      { email: "admin.auth@example.com", phone: "+15550000002", passwordHash, firstName: "Salon", lastName: "Admin", role: "SALON_ADMIN" },
+      { email: "super.auth@example.com", phone: "+15550000003", passwordHash, firstName: "Super", lastName: "Admin", role: "SUPER_ADMIN" },
+      { email: "inactive.auth@example.com", phone: "+15550000004", passwordHash, firstName: "Inactive", lastName: "User", isActive: false },
     ]);
   });
 
@@ -57,6 +57,7 @@ describeAuth("authentication and role access", () => {
       .set("Origin", environment.FRONTEND_ORIGIN)
       .send({
         email: "New.Customer@Example.com",
+        phone: "+15550000005",
         password: "Password123!",
         firstName: "New",
         lastName: "Customer",
@@ -75,11 +76,20 @@ describeAuth("authentication and role access", () => {
     expect(saved?.passwordHash).not.toBe("Password123!");
     expect(await bcrypt.compare("Password123!", saved?.passwordHash ?? "")).toBe(true);
 
+    const withoutEmail = await request(app)
+      .post("/api/v1/auth/register")
+      .set("Origin", environment.FRONTEND_ORIGIN)
+      .send({ phone: "+15550000008", password: "Password123!", firstName: "Phone", lastName: "Only" });
+    expect(withoutEmail.status).toBe(201);
+    expect((withoutEmail.body as { data: { user: { email: null; phone: string } } }).data.user)
+      .toMatchObject({ email: null, phone: "+15550000008" });
+
     const privileged = await request(app)
       .post("/api/v1/auth/register")
       .set("Origin", environment.FRONTEND_ORIGIN)
       .send({
         email: "owner@example.com",
+        phone: "+15550000006",
         password: "Password123!",
         firstName: "Fake",
         lastName: "Owner",
@@ -89,14 +99,14 @@ describeAuth("authentication and role access", () => {
   });
 
   it.each([
-    ["customer.auth@example.com", "CUSTOMER"],
-    ["admin.auth@example.com", "SALON_ADMIN"],
-    ["super.auth@example.com", "SUPER_ADMIN"],
-  ])("logs in %s with role %s", async (email, role) => {
+    ["+15550000001", "CUSTOMER"],
+    ["+15550000002", "SALON_ADMIN"],
+    ["+15550000003", "SUPER_ADMIN"],
+  ])("logs in phone %s with role %s", async (phone, role) => {
     const response = await request(app)
       .post("/api/v1/auth/login")
       .set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ email, password: "Password123!" });
+      .send({ phone, password: "Password123!" });
     expect(response.status).toBe(200);
     expect((response.body as { data: { user: { role: string } } }).data.user.role).toBe(role);
   });
@@ -105,26 +115,26 @@ describeAuth("authentication and role access", () => {
     const wrong = await request(app)
       .post("/api/v1/auth/login")
       .set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ email: "customer.auth@example.com", password: "wrong" });
+      .send({ phone: "+15550000001", password: "wrong" });
     expect(wrong.status).toBe(401);
     expect((wrong.body as { error: { code: string } }).error.code).toBe("INVALID_CREDENTIALS");
 
     const inactive = await request(app)
       .post("/api/v1/auth/login")
       .set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ email: "inactive.auth@example.com", password: "Password123!" });
+      .send({ phone: "+15550000004", password: "Password123!" });
     expect(inactive.status).toBe(401);
 
     const duplicate = await request(app)
       .post("/api/v1/auth/register")
       .set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ email: "customer.auth@example.com", password: "Password123!", firstName: "Again", lastName: "User" });
+      .send({ email: "customer.auth@example.com", phone: "+15550000007", password: "Password123!", firstName: "Again", lastName: "User" });
     expect(duplicate.status).toBe(409);
 
     const untrusted = await request(app)
       .post("/api/v1/auth/login")
       .set("Origin", "https://attacker.example")
-      .send({ email: "customer.auth@example.com", password: "Password123!" });
+      .send({ phone: "+15550000001", password: "Password123!" });
     expect(untrusted.status).toBe(403);
   });
 
@@ -133,7 +143,7 @@ describeAuth("authentication and role access", () => {
     const login = await agent
       .post("/api/v1/auth/login")
       .set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ email: "customer.auth@example.com", password: "Password123!" });
+      .send({ phone: "+15550000001", password: "Password123!" });
     const oldRefreshCookie = (login.headers["set-cookie"] as unknown as string[]).find((cookie) => cookie.startsWith("salon_refresh="));
     expect(oldRefreshCookie).toBeDefined();
 

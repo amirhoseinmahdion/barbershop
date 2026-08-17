@@ -4,7 +4,7 @@ export type UserRole = "CUSTOMER" | "SALON_ADMIN" | "SUPER_ADMIN";
 
 export interface AuthenticatedUser {
   id: string;
-  email: string;
+  email: string | null;
   firstName: string;
   lastName: string;
   phone: string | null;

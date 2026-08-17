@@ -35,12 +35,12 @@ describeSalons("profiles and salon management", () => {
     await migrate(connection.database, { migrationsFolder: "drizzle" });
     const passwordHash = await bcrypt.hash("Password123!", 4);
     const createdUsers = await connection.database.insert(users).values([
-      { email: "customer.manage@example.com", passwordHash, firstName: "Manage", lastName: "Customer", role: "CUSTOMER" },
-      { email: "assigned.manage@example.com", passwordHash, firstName: "Assigned", lastName: "Admin", role: "SALON_ADMIN" },
-      { email: "unassigned.manage@example.com", passwordHash, firstName: "Unassigned", lastName: "Admin", role: "SALON_ADMIN" },
-      { email: "platform.manage@example.com", passwordHash, firstName: "Platform", lastName: "Admin", role: "SUPER_ADMIN" },
+      { email: "customer.manage@example.com", phone: "+16660000001", passwordHash, firstName: "Manage", lastName: "Customer", role: "CUSTOMER" },
+      { email: "assigned.manage@example.com", phone: "+16660000002", passwordHash, firstName: "Assigned", lastName: "Admin", role: "SALON_ADMIN" },
+      { email: "unassigned.manage@example.com", phone: "+16660000003", passwordHash, firstName: "Unassigned", lastName: "Admin", role: "SALON_ADMIN" },
+      { email: "platform.manage@example.com", phone: "+16660000004", passwordHash, firstName: "Platform", lastName: "Admin", role: "SUPER_ADMIN" },
     ]).returning();
-    const assignedAdmin = createdUsers.find((user) => user.email.startsWith("assigned."))!;
+    const assignedAdmin = createdUsers.find((user) => user.email?.startsWith("assigned."))!;
     const createdSalons = await connection.database.insert(salons).values([
       { slug: "first-salon", name: "First Salon", audience: "UNISEX", streetAddress: "1 Main St", city: "Tehran", countryCode: "IR", timezone: "Asia/Tehran" },
       { slug: "second-salon", name: "Second Salon", audience: "MEN", streetAddress: "2 Main St", city: "Shiraz", countryCode: "IR", timezone: "Asia/Tehran" },
@@ -60,15 +60,15 @@ describeSalons("profiles and salon management", () => {
 
   afterAll(async () => connection.pool.end());
 
-  async function login(email: string) {
+  async function login(phone: string) {
     const agent = request.agent(app);
-    const response = await agent.post("/api/v1/auth/login").set("Origin", environment.FRONTEND_ORIGIN).send({ email, password: "Password123!" });
+    const response = await agent.post("/api/v1/auth/login").set("Origin", environment.FRONTEND_ORIGIN).send({ phone, password: "Password123!" });
     expect(response.status).toBe(200);
     return agent;
   }
 
   it("updates only allowed personal profile fields", async () => {
-    const agent = await login("customer.manage@example.com");
+    const agent = await login("+16660000001");
     const updated = await agent.patch("/api/v1/users/me").set("Origin", environment.FRONTEND_ORIGIN)
       .send({ firstName: "Updated", phone: "+989120000000" });
     expect(updated.status).toBe(200);
@@ -93,7 +93,7 @@ describeSalons("profiles and salon management", () => {
   });
 
   it("lets an assigned admin update only their salon", async () => {
-    const agent = await login("assigned.manage@example.com");
+    const agent = await login("+16660000002");
     const read = await agent.get("/api/v1/admin/salon");
     expect(read.body.data.salon.id).toBe(salonOneId);
     const updated = await agent.patch("/api/v1/admin/salon").set("Origin", environment.FRONTEND_ORIGIN).send({ description: "Updated profile" });
@@ -103,14 +103,14 @@ describeSalons("profiles and salon management", () => {
   });
 
   it("denies customers and unassigned administrators", async () => {
-    const customer = await login("customer.manage@example.com");
+    const customer = await login("+989120000000");
     expect((await customer.get("/api/v1/admin/salon")).status).toBe(403);
-    const unassigned = await login("unassigned.manage@example.com");
+    const unassigned = await login("+16660000003");
     expect((await unassigned.get("/api/v1/admin/salon")).status).toBe(403);
   });
 
   it("creates, updates, and deactivates assigned salon services", async () => {
-    const agent = await login("assigned.manage@example.com");
+    const agent = await login("+16660000002");
     const created = await agent.post("/api/v1/admin/services").set("Origin", environment.FRONTEND_ORIGIN)
       .send({ name: "Color", description: "Full color", durationMinutes: 60, priceMinor: 5000, currency: "USD" });
     expect(created.status).toBe(201);
@@ -125,7 +125,7 @@ describeSalons("profiles and salon management", () => {
   });
 
   it("validates service rules and uniqueness safely", async () => {
-    const agent = await login("assigned.manage@example.com");
+    const agent = await login("+16660000002");
     for (const body of [
       { name: "Bad", durationMinutes: 0, priceMinor: 100, currency: "USD" },
       { name: "Bad", durationMinutes: 30, priceMinor: 0, currency: "USD" },
@@ -140,7 +140,7 @@ describeSalons("profiles and salon management", () => {
   });
 
   it("permits explicit platform-admin cross-salon management", async () => {
-    const agent = await login("platform.manage@example.com");
+    const agent = await login("+16660000004");
     expect((await agent.get("/api/v1/admin/salon")).status).toBe(422);
     const response = await agent.patch(`/api/v1/admin/salon?salonId=${salonTwoId}`).set("Origin", environment.FRONTEND_ORIGIN).send({ city: "Isfahan" });
     expect(response.status).toBe(200);

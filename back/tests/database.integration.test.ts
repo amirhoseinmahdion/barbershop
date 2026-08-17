@@ -83,15 +83,15 @@ describeDatabase("database foundation", () => {
   it("rejects invalid enum, ownership, value, schedule, and foreign-key data", async () => {
     await expect(
       pool.query(
-        "insert into users (email, password_hash, first_name, last_name, role) values ($1, $2, $3, $4, $5)",
-        ["invalid-role@example.com", "not-a-real-hash", "Invalid", "Role", "OWNER"],
+        "insert into users (email, phone, password_hash, first_name, last_name, role) values ($1, $2, $3, $4, $5, $6)",
+        ["invalid-role@example.com", "+18880000001", "not-a-real-hash", "Invalid", "Role", "OWNER"],
       ),
     ).rejects.toMatchObject({ code: "22P02" });
 
     await expect(
       pool.query(
-        "insert into users (email, password_hash, first_name, last_name) values ($1, $2, $3, $4)",
-        ["Uppercase@example.com", "not-a-real-hash", "Invalid", "Email"],
+        "insert into users (email, phone, password_hash, first_name, last_name) values ($1, $2, $3, $4, $5)",
+        ["Uppercase@example.com", "+18880000002", "not-a-real-hash", "Invalid", "Email"],
       ),
     ).rejects.toMatchObject({ code: "23514" });
 

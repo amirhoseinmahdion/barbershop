@@ -7,7 +7,7 @@ import { AppError } from "../src/shared/errors/app-error.js";
 
 const customer: SafeUser = {
   id: "00000000-0000-4000-8000-000000000001", email: "customer@example.com", firstName: "Test", lastName: "Customer",
-  phone: null, profileImageUrl: null, role: "CUSTOMER",
+  phone: "+17770000001", profileImageUrl: null, role: "CUSTOMER",
 };
 const salonAdmin: SafeUser = { ...customer, id: "00000000-0000-4000-8000-000000000002", role: "SALON_ADMIN" };
 const superAdmin: SafeUser = { ...customer, id: "00000000-0000-4000-8000-000000000003", role: "SUPER_ADMIN" };

@@ -6,7 +6,7 @@ const requiredText = (max: number) => z.string().trim().min(1).max(max);
 export const profileUpdateSchema = z.object({
   firstName: requiredText(80).optional(),
   lastName: requiredText(80).optional(),
-  phone: optionalText(30),
+  phone: z.string().trim().min(7).max(30).optional(),
   profileImageUrl: z.url().max(2048).nullable().optional(),
 }).strict().refine((value) => Object.keys(value).length > 0, "At least one profile field is required.");
 

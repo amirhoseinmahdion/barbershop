@@ -73,7 +73,7 @@ export function ProtectedPage({ allowedRole, eyebrow, title, description, manage
           <button onClick={logout} className="rounded-xl border border-stone-300 px-5 py-2.5 text-sm font-semibold hover:bg-stone-100">Sign out</button>
         </div>
         <form onSubmit={updateProfile} className="mt-10 rounded-2xl bg-stone-100 p-6"><div className="flex items-center justify-between gap-4"><h2 className="text-lg font-bold">Account profile</h2><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">{user.role.replace("_", " ")}</span></div>
-          <p className="mt-2 text-sm text-stone-600">{user.email}</p><div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <p className="mt-2 text-sm text-stone-600">{user.email ?? "No email provided"}</p><div className="mt-5 grid gap-4 sm:grid-cols-3">
             <label className="text-sm font-medium">First name<input name="firstName" defaultValue={user.firstName} required className="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3" /></label>
             <label className="text-sm font-medium">Last name<input name="lastName" defaultValue={user.lastName} required className="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3" /></label>
             <label className="text-sm font-medium">Phone<input name="phone" defaultValue={user.phone ?? ""} className="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3" /></label>

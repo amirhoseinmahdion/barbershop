@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const email = z.string().trim().email().max(254).transform((value) => value.toLowerCase());
+const phone = z.string().trim().regex(/^\+?[0-9]{7,15}$/, "Enter a valid phone number using 7 to 15 digits.");
 const password = z
   .string()
   .min(8)
@@ -11,17 +12,17 @@ const password = z
 
 export const registerSchema = z
   .object({
-    email,
+    email: z.union([email, z.literal("").transform(() => undefined)]).optional(),
     password,
     firstName: z.string().trim().min(1).max(80),
     lastName: z.string().trim().min(1).max(80),
-    phone: z.string().trim().min(7).max(30).optional(),
+    phone,
   })
   .strict();
 
 export const loginSchema = z
   .object({
-    email,
+    phone,
     password: z.string().min(1).max(72),
   })
   .strict();

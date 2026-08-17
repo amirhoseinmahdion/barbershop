@@ -6,7 +6,7 @@ export type UserRole = UserRecord["role"];
 
 export interface SafeUser {
   id: string;
-  email: string;
+  email: string | null;
   firstName: string;
   lastName: string;
   phone: string | null;

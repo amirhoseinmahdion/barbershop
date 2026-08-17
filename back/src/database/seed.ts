@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { loadEnvironment } from "../config/env.js";
 import { createDatabase, type DatabaseConnection } from "./client.js";
 import {
@@ -36,6 +37,7 @@ export async function seedDatabase({ database }: Pick<DatabaseConnection, "datab
         {
           id: seedIds.customer,
           email: "customer@example.com",
+          phone: "+989120000001",
           passwordHash: developmentPasswordHash,
           firstName: "Demo",
           lastName: "Customer",
@@ -44,6 +46,7 @@ export async function seedDatabase({ database }: Pick<DatabaseConnection, "datab
         {
           id: seedIds.salonAdmin,
           email: "salon.admin@example.com",
+          phone: "+989120000002",
           passwordHash: developmentPasswordHash,
           firstName: "Demo",
           lastName: "Salon Admin",
@@ -52,6 +55,7 @@ export async function seedDatabase({ database }: Pick<DatabaseConnection, "datab
         {
           id: seedIds.superAdmin,
           email: "platform.admin@example.com",
+          phone: "+989120000003",
           passwordHash: developmentPasswordHash,
           firstName: "Demo",
           lastName: "Platform Admin",
@@ -60,7 +64,12 @@ export async function seedDatabase({ database }: Pick<DatabaseConnection, "datab
       ])
       .onConflictDoUpdate({
         target: users.id,
-        set: { passwordHash: developmentPasswordHash, updatedAt: new Date() },
+        set: {
+          email: sql`excluded.email`,
+          phone: sql`excluded.phone`,
+          passwordHash: developmentPasswordHash,
+          updatedAt: new Date(),
+        },
       });
 
     await transaction

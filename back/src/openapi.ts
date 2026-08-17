@@ -2,7 +2,7 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Hair Salon Platform API",
-    version: "0.2.0",
+    version: "0.3.0",
     description: "Express API for salon news, schedules, and appointment reservations.",
   },
   servers: [
@@ -178,7 +178,7 @@ export const openApiDocument = {
     },
     responses: {
       Unauthorized: { description: "Authentication failed.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-      Conflict: { description: "The email is already registered.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+      Conflict: { description: "The email or phone number is already registered.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
       ValidationError: { description: "The request body is invalid.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
     },
     schemas: {
@@ -186,7 +186,7 @@ export const openApiDocument = {
         type: "object", additionalProperties: false,
         required: ["id", "email", "firstName", "lastName", "phone", "profileImageUrl", "role"],
         properties: {
-          id: { type: "string", format: "uuid" }, email: { type: "string", format: "email" },
+          id: { type: "string", format: "uuid" }, email: { type: ["string", "null"], format: "email" },
           firstName: { type: "string" }, lastName: { type: "string" },
           phone: { type: ["string", "null"] }, profileImageUrl: { type: ["string", "null"], format: "uri" },
           role: { type: "string", enum: ["CUSTOMER", "SALON_ADMIN", "SUPER_ADMIN"] },
@@ -204,13 +204,13 @@ export const openApiDocument = {
         properties: { data: { type: "object", additionalProperties: false, required: ["user"], properties: { user: { $ref: "#/components/schemas/User" } } } },
       },
       LoginRequest: {
-        type: "object", additionalProperties: false, required: ["email", "password"],
-        properties: { email: { type: "string", format: "email" }, password: { type: "string", format: "password" } },
+        type: "object", additionalProperties: false, required: ["phone", "password"],
+        properties: { phone: { type: "string", pattern: "^\\+?[0-9]{7,15}$" }, password: { type: "string", format: "password" } },
       },
       RegisterRequest: {
         allOf: [
           { $ref: "#/components/schemas/LoginRequest" },
-          { type: "object", additionalProperties: false, required: ["firstName", "lastName"], properties: { firstName: { type: "string" }, lastName: { type: "string" }, phone: { type: "string" } } },
+          { type: "object", additionalProperties: false, required: ["firstName", "lastName"], properties: { firstName: { type: "string" }, lastName: { type: "string" }, email: { type: "string", format: "email" } } },
         ],
       },
       ErrorResponse: {
