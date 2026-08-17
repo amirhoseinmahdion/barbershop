@@ -7,7 +7,7 @@ import { toSafeUser } from "../auth/auth.types.js";
 import { AppError } from "../../shared/errors/app-error.js";
 import { createSalonRepository, type SalonRepository } from "./salon.repository.js";
 import {
-  adminSalonQuerySchema, profileUpdateSchema, salonListQuerySchema, salonLookupSchema,
+  adminAssignmentSchema, adminSalonQuerySchema, profileUpdateSchema, salonCreateSchema, salonListQuerySchema, salonLookupSchema,
   salonUpdateSchema, serviceCreateSchema, serviceIdSchema, serviceUpdateSchema,
 } from "./salon.validation.js";
 
@@ -25,6 +25,22 @@ async function resolveManagedSalon(repository: SalonRepository, user: NonNullabl
   const salon = await repository.findAssignedSalon(user.id);
   if (!salon) throw new AppError(403, "SALON_ACCESS_DENIED", "You are not assigned to a salon.");
   return salon;
+}
+
+export function createPlatformSalonRouter(database: Database, environment: Environment) {
+  const router = Router();
+  const authRepository = createAuthRepository(database); const repository = createSalonRepository(database);
+  router.use(authenticate(authRepository, environment), authorize("SUPER_ADMIN"));
+  router.get("/salons", async (_request, response) => response.json({ data: await repository.listAllSalons(), nextCursor: null }));
+  router.post("/salons", async (request, response) => response.status(201).json({ data: { salon: await repository.createSalon(salonCreateSchema.parse(request.body)) } }));
+  router.post("/salons/:salonId/admins", async (request, response) => {
+    const salonId = serviceIdSchema.parse(request.params.salonId);
+    if (!await repository.findSalonById(salonId)) throw new AppError(404, "SALON_NOT_FOUND", "The salon was not found.");
+    const user = await repository.assignAdminByPhone(salonId, adminAssignmentSchema.parse(request.body).phone);
+    if (!user) throw new AppError(404, "ELIGIBLE_ADMIN_NOT_FOUND", "An eligible user with this phone number was not found.");
+    response.status(201).json({ data: { user: toSafeUser(user) } });
+  });
+  return router;
 }
 
 export function createProfileRouter(database: Database, environment: Environment) {

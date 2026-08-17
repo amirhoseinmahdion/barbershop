@@ -146,4 +146,20 @@ describeSalons("profiles and salon management", () => {
     expect(response.status).toBe(200);
     expect(response.body.data.salon).toMatchObject({ id: salonTwoId, city: "Isfahan" });
   });
+
+  it("lets platform admins create salons and assign an administrator", async () => {
+    const agent = await login("+16660000004");
+    const created = await agent.post("/api/v1/platform/salons").set("Origin", environment.FRONTEND_ORIGIN).send({
+      slug: "platform-created", name: "Platform Created", audience: "UNISEX", streetAddress: "10 New Street",
+      city: "Tehran", countryCode: "IR", timezone: "Asia/Tehran",
+    });
+    expect(created.status).toBe(201);
+    const salonId = created.body.data.salon.id as string;
+    const assigned = await agent.post(`/api/v1/platform/salons/${salonId}/admins`).set("Origin", environment.FRONTEND_ORIGIN)
+      .send({ phone: "+989120000000" });
+    expect(assigned.status).toBe(201);
+    expect(assigned.body.data.user.role).toBe("SALON_ADMIN");
+    const list = await agent.get("/api/v1/platform/salons");
+    expect(list.body.data.some((salon: { id: string }) => salon.id === salonId)).toBe(true);
+  });
 });

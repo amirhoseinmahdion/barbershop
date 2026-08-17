@@ -1,7 +1,7 @@
 import { and, asc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
 import type { DatabaseConnection } from "../../database/client.js";
 import { salonAdmins, salons, services, users } from "../../database/schema.js";
-import type { ProfileUpdate, SalonUpdate, ServiceCreate, ServiceUpdate } from "./salon.validation.js";
+import type { ProfileUpdate, SalonCreate, SalonUpdate, ServiceCreate, ServiceUpdate } from "./salon.validation.js";
 
 type Database = DatabaseConnection["database"];
 
@@ -43,6 +43,18 @@ export function createSalonRepository(database: Database) {
       const [salon] = await database.update(salons).set({ ...values, updatedAt: new Date() }).where(eq(salons.id, salonId)).returning();
       return salon;
     },
+    listAllSalons: async () => database.select().from(salons).orderBy(asc(salons.name)),
+    createSalon: async (values: SalonCreate) => {
+      const [salon] = await database.insert(salons).values(values).returning(); return salon;
+    },
+    assignAdminByPhone: async (salonId: string, phone: string) => database.transaction(async (transaction) => {
+      const user = await transaction.query.users.findFirst({ where: eq(users.phone, phone) });
+      if (!user) return null;
+      if (user.role === "CUSTOMER") await transaction.update(users).set({ role: "SALON_ADMIN", updatedAt: new Date() }).where(eq(users.id, user.id));
+      if (user.role === "SUPER_ADMIN") return null;
+      await transaction.insert(salonAdmins).values({ salonId, userId: user.id }).onConflictDoNothing();
+      return { ...user, role: "SALON_ADMIN" as const };
+    }),
     listAdminServices: async (salonId: string) => database.select().from(services)
       .where(eq(services.salonId, salonId)).orderBy(asc(services.name)),
     createService: async (salonId: string, values: ServiceCreate) => {

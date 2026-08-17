@@ -5,6 +5,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { destinationForRole, logoutSession, restoreSession, type AuthenticatedUser, type UserRole } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
 import { SalonManager } from "@/components/salon/salon-manager";
+import { PlatformManager } from "@/components/salon/platform-manager";
 
 interface ProtectedPageProps {
   allowedRole: UserRole;
@@ -12,9 +13,10 @@ interface ProtectedPageProps {
   title: string;
   description: string;
   manageSalon?: boolean;
+  managePlatform?: boolean;
 }
 
-export function ProtectedPage({ allowedRole, eyebrow, title, description, manageSalon = false }: ProtectedPageProps) {
+export function ProtectedPage({ allowedRole, eyebrow, title, description, manageSalon = false, managePlatform = false }: ProtectedPageProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [error, setError] = useState("");
@@ -80,6 +82,7 @@ export function ProtectedPage({ allowedRole, eyebrow, title, description, manage
           </div><button className="mt-5 rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white">Save profile</button>
         </form>
         {manageSalon ? <SalonManager /> : null}
+        {managePlatform ? <PlatformManager /> : null}
         {message ? <p role="status" className="mt-5 text-sm font-medium text-emerald-800">{message}</p> : null}
         {error ? <p role="alert" className="mt-5 text-sm text-red-700">{error}</p> : null}
       </section>
