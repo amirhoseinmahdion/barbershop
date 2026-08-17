@@ -26,14 +26,10 @@ export default async function SalonDetailPage({ params }: { params: Promise<{ sl
       <section className="mt-10"><h2 className="text-2xl font-bold text-stone-900">Services</h2>
         {servicePayload.data.length === 0 ? <p className="mt-5 rounded-2xl bg-white p-6 text-stone-600">No active services are listed yet.</p> : (
           <ul className="mt-5 grid gap-4 sm:grid-cols-2">{servicePayload.data.map((service) => (
-            <li key={service.id} className="rounded-2xl border border-stone-200 bg-white p-6"><div className="flex justify-between gap-4"><h3 className="font-bold text-stone-900">{service.name}</h3><span className="font-semibold text-amber-900">{formatMoney(service.priceMinor, service.currency)}</span></div><p className="mt-2 text-sm text-stone-600">{service.durationMinutes} minutes</p><p className="mt-3 text-sm leading-6 text-stone-600">{service.description}</p></li>
+            <li key={service.id} className="rounded-2xl border border-stone-200 bg-white p-6"><h3 className="font-bold text-stone-900">{service.name}</h3><p className="mt-2 text-sm text-stone-600">{service.durationMinutes} minutes</p><p className="mt-3 text-sm leading-6 text-stone-600">{service.description}</p></li>
           ))}</ul>
         )}
       </section>
     </main></>
   );
-}
-
-function formatMoney(priceMinor: number, currency: string) {
-  return new Intl.NumberFormat("en", { style: "currency", currency }).format(priceMinor / 100);
 }

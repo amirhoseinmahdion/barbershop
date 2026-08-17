@@ -50,8 +50,8 @@ export const serviceCreateSchema = z.object({
   name: requiredText(120),
   description: z.string().trim().max(2000).default(""),
   durationMinutes: z.number().int().min(5).max(720),
-  priceMinor: z.number().int().positive().max(100_000_000),
-  currency: z.string().trim().regex(/^[A-Z]{3}$/),
+  priceMinor: z.number().int().positive().max(100_000_000).default(1),
+  currency: z.string().trim().regex(/^[A-Z]{3}$/).default("IRR"),
 }).strict();
 
 export const serviceUpdateSchema = serviceCreateSchema.partial().extend({ isActive: z.boolean().optional() })

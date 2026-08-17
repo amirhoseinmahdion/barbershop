@@ -112,8 +112,9 @@ describeSalons("profiles and salon management", () => {
   it("creates, updates, and deactivates assigned salon services", async () => {
     const agent = await login("+16660000002");
     const created = await agent.post("/api/v1/admin/services").set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ name: "Color", description: "Full color", durationMinutes: 60, priceMinor: 5000, currency: "USD" });
+      .send({ name: "Color", description: "Full color", durationMinutes: 60 });
     expect(created.status).toBe(201);
+    expect(created.body.data.service).toMatchObject({ priceMinor: 1, currency: "IRR" });
     const serviceId = created.body.data.service.id as string;
     const updated = await agent.patch(`/api/v1/admin/services/${serviceId}`).set("Origin", environment.FRONTEND_ORIGIN)
       .send({ durationMinutes: 75, isActive: true });
