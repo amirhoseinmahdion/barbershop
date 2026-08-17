@@ -15,18 +15,24 @@
     "db:seed": "tsx src/database/seed.ts"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "latest",
     "dotenv": "latest",
     "drizzle-orm": "latest",
     "express": "latest",
+    "jsonwebtoken": "^9.0.3",
     "pg": "latest",
     "swagger-ui-express": "^5.0.1",
     "zod": "latest"
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "latest",
     "@types/express": "latest",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "latest",
     "@types/pg": "latest",
     "@types/supertest": "latest",

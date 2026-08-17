@@ -8,6 +8,8 @@ const { database, pool } = createDatabase(environment.DATABASE_URL);
 
 const app = createApp({
   frontendOrigin: environment.FRONTEND_ORIGIN,
+  database,
+  environment,
   readinessCheck: async () => {
     await database.execute(sql`select 1`);
   },

@@ -1,0 +1,81 @@
+import { randomUUID } from "node:crypto";
+import bcrypt from "bcrypt";
+import type { Environment } from "../../config/env.js";
+import { AppError } from "../../shared/errors/app-error.js";
+import type { AuthRepository } from "./auth.repository.js";
+import {
+  createSessionTokens,
+  hashRefreshToken,
+  verifyRefreshToken,
+} from "./auth.tokens.js";
+import { toSafeUser } from "./auth.types.js";
+import type { LoginInput, RegisterInput } from "./auth.validation.js";
+
+export function createAuthService(repository: AuthRepository, environment: Environment) {
+  async function issueSession(user: ReturnType<typeof toSafeUser>) {
+    const sessionId = randomUUID();
+    const tokens = createSessionTokens(user, sessionId, environment);
+    await repository.createSession({
+      id: sessionId,
+      userId: user.id,
+      refreshTokenHash: hashRefreshToken(tokens.refreshToken),
+      expiresAt: tokens.refreshExpiresAt,
+    });
+    return { user, ...tokens };
+  }
+
+  return {
+    register: async (input: RegisterInput) => {
+      if (await repository.findUserByEmail(input.email)) {
+        throw new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists.");
+      }
+      const user = await repository.createCustomer({
+        email: input.email,
+        passwordHash: await bcrypt.hash(input.password, 12),
+        firstName: input.firstName,
+        lastName: input.lastName,
+        phone: input.phone ?? null,
+        role: "CUSTOMER",
+      });
+      if (!user) throw new AppError(500, "ACCOUNT_CREATE_FAILED", "The account could not be created.");
+      return issueSession(toSafeUser(user));
+    },
+    login: async (input: LoginInput) => {
+      const user = await repository.findUserByEmail(input.email);
+      if (!user || !user.isActive || !(await bcrypt.compare(input.password, user.passwordHash))) {
+        throw new AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect.");
+      }
+      return issueSession(toSafeUser(user));
+    },
+    refresh: async (rawRefreshToken: string) => {
+      const claims = verifyRefreshToken(rawRefreshToken, environment);
+      const session = await repository.findValidSession(claims.sid, claims.sub);
+      if (!session || session.refreshTokenHash !== hashRefreshToken(rawRefreshToken)) {
+        throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+      }
+      const userRecord = await repository.findActiveUserById(claims.sub);
+      if (!userRecord) throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+      const user = toSafeUser(userRecord);
+      const tokens = createSessionTokens(user, claims.sid, environment);
+      const rotated = await repository.rotateSession(
+        claims.sid,
+        hashRefreshToken(rawRefreshToken),
+        hashRefreshToken(tokens.refreshToken),
+        tokens.refreshExpiresAt,
+      );
+      if (!rotated) throw new AppError(401, "INVALID_SESSION", "The session has already been rotated.");
+      return { user, ...tokens };
+    },
+    logout: async (rawRefreshToken: string | undefined) => {
+      if (!rawRefreshToken) return;
+      try {
+        const claims = verifyRefreshToken(rawRefreshToken, environment);
+        await repository.revokeSession(claims.sid, hashRefreshToken(rawRefreshToken));
+      } catch {
+        // Cookies are cleared even when a stale token cannot be verified.
+      }
+    },
+  };
+}
+
+export type AuthService = ReturnType<typeof createAuthService>;

@@ -25,7 +25,8 @@ export const seedIds = {
   booking: "70000000-0000-4000-8000-000000000001",
 } as const;
 
-const developmentPasswordHash = "DEVELOPMENT_ONLY_REPLACE_WHEN_AUTHENTICATION_IS_IMPLEMENTED";
+// Password: Password123! — local development accounts only.
+const developmentPasswordHash = "$2b$12$Aoiy5l.QfT7Wlt2xi2jcgO8MxixSx3xI9lyRiX/HV.Ks8gPwF4Wli";
 
 export async function seedDatabase({ database }: Pick<DatabaseConnection, "database">): Promise<void> {
   await database.transaction(async (transaction) => {
@@ -57,7 +58,10 @@ export async function seedDatabase({ database }: Pick<DatabaseConnection, "datab
           role: "SUPER_ADMIN",
         },
       ])
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: users.id,
+        set: { passwordHash: developmentPasswordHash, updatedAt: new Date() },
+      });
 
     await transaction
       .insert(salons)
