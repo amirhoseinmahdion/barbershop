@@ -189,7 +189,7 @@ describeSalons("profiles and salon management", () => {
     const ownService = await connection.database.query.services.findFirst({ where: (table, { and, eq }) => and(eq(table.salonId, salonOneId), eq(table.name, "Active Cut")) });
     const slots = await request(app).get(`/api/v1/salons/${salonOneId}/availability?serviceId=${ownService!.id}&date=2030-01-05`);
     expect(slots.body.data.slots.length).toBeGreaterThan(0);
-    expect(new Date(slots.body.data.slots[1]).getTime() - new Date(slots.body.data.slots[0]).getTime()).toBe(60 * 60 * 1000);
+    expect(new Date(slots.body.data.slots[1]).getTime() - new Date(slots.body.data.slots[0]).getTime()).toBe(15 * 60 * 1000);
     const customer = await login("+989120000000");
     const created = await customer.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN)
       .send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[0] });
