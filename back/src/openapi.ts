@@ -142,6 +142,13 @@ export const openApiDocument = {
       get: { tags: ["Salon administration"], summary: "List managed services", operationId: "listManagedServices", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], responses: { "200": { description: "All managed services.", content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceList" } } } } } },
       post: { tags: ["Salon administration"], summary: "Create a service", operationId: "createService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceWrite" } } } }, responses: { "201": { description: "Service created." }, "409": { $ref: "#/components/responses/Conflict" }, "422": { $ref: "#/components/responses/ValidationError" } } },
     },
+    "/api/v1/admin/bookings": {
+      get: {
+        tags: ["Salon administration"], summary: "List reservations for the assigned salon", operationId: "listManagedBookings", security: [{ accessCookie: [] }],
+        parameters: [{ $ref: "#/components/parameters/AdminSalonId" }],
+        responses: { "200": { description: "Assigned-salon reservations with customer contact details." }, "403": { description: "Role or salon assignment denied." } },
+      },
+    },
     "/api/v1/admin/services/{serviceId}": {
       patch: { tags: ["Salon administration"], summary: "Update a service", operationId: "updateService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }, { name: "serviceId", in: "path", required: true, schema: { type: "string", format: "uuid" } }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceWrite" } } } }, responses: { "200": { description: "Service updated." }, "404": { description: "Service not found." } } },
       delete: { tags: ["Salon administration"], summary: "Deactivate a service", operationId: "deactivateService", security: [{ accessCookie: [] }], parameters: [{ $ref: "#/components/parameters/AdminSalonId" }, { name: "serviceId", in: "path", required: true, schema: { type: "string", format: "uuid" } }], responses: { "204": { description: "Service deactivated." }, "404": { description: "Service not found." } } },

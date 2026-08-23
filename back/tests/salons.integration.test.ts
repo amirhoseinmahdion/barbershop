@@ -194,7 +194,15 @@ describeSalons("profiles and salon management", () => {
       .send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[0] });
     expect(created.status).toBe(201);
     expect(await connection.database.query.bookings.findFirst({ where: eq(bookings.id, created.body.data.booking.id) })).toBeDefined();
+    const refreshedSlots = await request(app).get(`/api/v1/salons/${salonOneId}/availability?serviceId=${ownService!.id}&date=2030-01-05`);
+    expect(refreshedSlots.body.data.slots).not.toContain(slots.body.data.slots[0]);
     const admin = await login("+16660000002");
+    const adminBookings = await admin.get("/api/v1/admin/bookings");
+    expect(adminBookings.status).toBe(200);
+    expect(adminBookings.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: created.body.data.booking.id, serviceName: "Active Cut", customer: expect.objectContaining({ phone: "+989120000000" }) }),
+    ]));
+    expect((await admin.get(`/api/v1/admin/bookings?salonId=${salonTwoId}`)).status).toBe(403);
     expect((await admin.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN).send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[1] })).status).toBe(403);
   });
 });

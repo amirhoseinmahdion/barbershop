@@ -4,20 +4,33 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import type { Salon, SalonService } from "@/types/salon";
 
+interface AdminBooking {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+  serviceName: string;
+  durationMinutes: number;
+  customer: { firstName: string; lastName: string; phone: string };
+}
+
 export function SalonManager() {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<SalonService[]>([]);
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [salonPayload, servicePayload] = await Promise.all([
+      const [salonPayload, servicePayload, bookingPayload] = await Promise.all([
         apiRequest<{ data: { salon: Salon } }>("admin/salon"),
         apiRequest<{ data: SalonService[] }>("admin/services"),
+        apiRequest<{ data: AdminBooking[] }>("admin/bookings"),
       ]);
       setSalon(salonPayload.data.salon);
       setServices(servicePayload.data);
+      setBookings(bookingPayload.data);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -187,6 +200,32 @@ export function SalonManager() {
                 >
                   {service.isActive ? "Deactivate" : "Activate"}
                 </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-stone-200 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">Reservations</h2>
+            <p className="mt-1 text-sm text-stone-600">Customer appointments saved for your salon.</p>
+          </div>
+          <button type="button" onClick={() => void load()} className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold">Refresh</button>
+        </div>
+        {bookings.length === 0 ? (
+          <p className="mt-5 rounded-xl bg-stone-100 p-4 text-sm text-stone-600">No reservations yet.</p>
+        ) : (
+          <ul className="mt-5 space-y-3">
+            {bookings.map((booking) => (
+              <li key={booking.id} className="grid gap-3 rounded-xl bg-stone-100 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div>
+                  <p className="font-bold">{booking.serviceName}</p>
+                  <p className="mt-1 text-sm text-stone-700">{booking.customer.firstName} {booking.customer.lastName} · {booking.customer.phone}</p>
+                  <p className="mt-1 text-sm text-stone-600">{new Date(booking.startsAt).toLocaleString("fa-IR", { dateStyle: "full", timeStyle: "short" })} · {booking.durationMinutes} min</p>
+                </div>
+                <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">{booking.status}</span>
               </li>
             ))}
           </ul>

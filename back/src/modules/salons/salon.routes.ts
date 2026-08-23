@@ -110,6 +110,10 @@ export function createAdminSalonRouter(database: Database, environment: Environm
     const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
     response.json({ data: await repository.listAdminServices(salon.id), nextCursor: null });
   });
+  router.get("/bookings", async (request, response) => {
+    const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
+    response.json({ data: await repository.listAdminBookings(salon.id), nextCursor: null });
+  });
   router.post("/services", async (request, response) => {
     const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
     response.status(201).json({ data: { service: await repository.createService(salon.id, serviceCreateSchema.parse(request.body)) } });

@@ -1,6 +1,6 @@
-import { and, asc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
 import type { DatabaseConnection } from "../../database/client.js";
-import { salonAdmins, salons, services, users } from "../../database/schema.js";
+import { bookings, salonAdmins, salons, services, users } from "../../database/schema.js";
 import type { ProfileUpdate, SalonCreate, SalonUpdate, ServiceCreate, ServiceUpdate } from "./salon.validation.js";
 
 type Database = DatabaseConnection["database"];
@@ -101,6 +101,21 @@ export function createSalonRepository(database: Database) {
         .where(and(eq(services.id, serviceId), eq(services.salonId, salonId))).returning();
       return service;
     },
+    listAdminBookings: async (salonId: string) => database
+      .select({
+        id: bookings.id,
+        startsAt: bookings.startsAt,
+        endsAt: bookings.endsAt,
+        status: bookings.status,
+        serviceName: bookings.serviceName,
+        durationMinutes: bookings.durationMinutes,
+        customer: { firstName: users.firstName, lastName: users.lastName, phone: users.phone },
+      })
+      .from(bookings)
+      .innerJoin(users, eq(users.id, bookings.customerId))
+      .where(eq(bookings.salonId, salonId))
+      .orderBy(desc(bookings.startsAt))
+      .limit(100),
   };
 }
 

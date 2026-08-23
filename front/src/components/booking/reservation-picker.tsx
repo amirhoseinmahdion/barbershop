@@ -1,131 +1,112 @@
 "use client";
+
 import Link from "next/link";
 import { useState } from "react";
+import PersianDatePicker from "@/components/helper/PersianDatePicker";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import type { SalonService } from "@/types/salon";
-export function ReservationPicker({
-  salonId,
-  services,
-}: {
-  salonId: string;
-  services: SalonService[];
-}) {
+
+export function ReservationPicker({ salonId, services }: { salonId: string; services: SalonService[] }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [reserving, setReserving] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  async function findTimes() {
+
+  async function findTimes(nextDate = date, nextServiceId = serviceId) {
     setError("");
     setMessage("");
-    if (!serviceId || !date) {
-      setError("Choose a service and date.");
-      return;
-    }
+    setSelectedSlot("");
+    if (!nextServiceId || !nextDate) return;
+    setLoading(true);
+    setHasSearched(true);
     try {
-      const p = await apiRequest<{ data: { slots: string[] } }>(
-        `salons/${salonId}/availability?serviceId=${serviceId}&date=${date}`,
+      const payload = await apiRequest<{ data: { slots: string[] } }>(
+        `salons/${salonId}/availability?serviceId=${nextServiceId}&date=${nextDate}`,
       );
-      setSlots(p.data.slots);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load times.");
+      setSlots(payload.data.slots);
+    } catch (caught) {
+      setSlots([]);
+      setError(caught instanceof Error ? caught.message : "Could not load times.");
+    } finally {
+      setLoading(false);
     }
   }
-  async function reserve(startsAt: string) {
+
+  async function reserve() {
+    if (!selectedSlot) return;
     setError("");
+    setMessage("");
+    setReserving(true);
     try {
-      await apiRequest("bookings", {
-        method: "POST",
-        body: JSON.stringify({ salonId, serviceId, startsAt }),
-      });
-      setMessage("Reservation confirmed.");
-      setSlots((current) => current.filter((slot) => slot !== startsAt));
-    } catch (e) {
-      setError(
-        e instanceof ApiRequestError && e.status === 401
+      await apiRequest("bookings", { method: "POST", body: JSON.stringify({ salonId, serviceId, startsAt: selectedSlot }) });
+      await findTimes(date, serviceId);
+      setMessage("رزرو شما با موفقیت ثبت شد.");
+    } catch (caught) {
+      const reservationError =
+        caught instanceof ApiRequestError && caught.status === 401
           ? "Please sign in as a customer before reserving."
-          : e instanceof Error
-            ? e.message
-            : "Could not reserve.",
-      );
+          : caught instanceof Error ? caught.message : "Could not reserve.";
+      await findTimes(date, serviceId);
+      setError(reservationError);
+    } finally {
+      setReserving(false);
     }
   }
+
   if (services.length === 0) return null;
+  const selectedService = services.find((service) => service.id === serviceId);
+
   return (
-    <section className="mt-10 rounded-3xl border border-stone-200 bg-white p-6 md:p-8">
-      <h2 className="text-2xl font-bold">Reserve an appointment</h2>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium">
+    <section className="mt-10 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      <div className="bg-stone-900 px-6 py-5 text-white md:px-8">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Online booking</p>
+        <h2 className="mt-1 text-2xl font-bold">Reserve an appointment</h2>
+      </div>
+      <div className="space-y-6 p-6 md:p-8">
+        <label className="block text-sm font-bold text-stone-800">
           Service
           <select
             value={serviceId}
-            onChange={(e) => {
-              setServiceId(e.target.value);
+            onChange={(event) => {
+              const nextServiceId = event.target.value;
+              setServiceId(nextServiceId);
               setSlots([]);
+              setSelectedSlot("");
+              setHasSearched(false);
+              if (date) void findTimes(date, nextServiceId);
             }}
-            className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3"
+            className="mt-2 w-full rounded-xl border border-stone-300 bg-white px-4 py-3 outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-100"
           >
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-               {s.name}  — {s.durationMinutes + "دقیقه"} 
-              </option>
-            ))}
+            {services.map((service) => <option key={service.id} value={service.id}>{service.name} — {service.durationMinutes} دقیقه</option>)}
           </select>
         </label>
-        <label className="text-sm font-medium">
-          Date
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              setDate(e.target.value);
-              setSlots([]);
-            }}
-            className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3"
-          />
-        </label>
-      </div>
-      <button
-        onClick={() => void findTimes()}
-        className="mt-4 rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white"
-      >
-        Show available times
-      </button>
-      {error ? (
-        <p role="alert" className="mt-4 text-sm text-red-700">
-          {error}{" "}
-          {error.startsWith("Please sign") ? (
-            <Link href="/login" className="underline">
-              Sign in
-            </Link>
-          ) : null}
-        </p>
-      ) : null}
-      {message ? (
-        <p role="status" className="mt-4 text-emerald-800">
-          {message}
-        </p>
-      ) : null}
-      {slots.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {slots.map((slot) => (
-            <button
-              key={slot}
-              onClick={() => void reserve(slot)}
-              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 font-semibold text-amber-900"
-            >
-              {new Date(slot).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
+
+        <PersianDatePicker value={date} disabled={loading || reserving} onChange={(nextDate) => { setDate(nextDate); void findTimes(nextDate, serviceId); }} />
+
+        {loading ? <p role="status" className="text-sm text-stone-600">در حال دریافت زمان‌های آزاد…</p> : null}
+        {!loading && slots.length > 0 ? (
+          <div dir="rtl">
+            <p className="text-sm font-bold text-stone-800">ساعت رزرو</p>
+            <p className="mt-1 text-xs text-stone-500">زمان‌های پرشده نمایش داده نمی‌شوند.</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {slots.map((slot) => {
+                const selected = selectedSlot === slot;
+                return <button key={slot} type="button" aria-pressed={selected} onClick={() => setSelectedSlot(slot)} className={`rounded-xl border px-3 py-3 font-bold transition ${selected ? "border-amber-700 bg-amber-700 text-white shadow-md" : "border-stone-200 bg-stone-50 text-stone-800 hover:border-amber-500 hover:bg-amber-50"}`}>{new Date(slot).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}</button>;
               })}
-            </button>
-          ))}
-        </div>
-      ) : date ? (
-        <p className="mt-4 text-sm text-stone-600">
-          No available times for this date.
-        </p>
-      ) : null}
+            </div>
+          </div>
+        ) : null}
+        {!loading && hasSearched && slots.length === 0 && !error ? <p className="rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-600">برای این تاریخ زمان آزادی وجود ندارد.</p> : null}
+        {selectedSlot ? <div dir="rtl" className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900"><p className="font-bold">زمان انتخاب‌شده</p><p className="mt-1">{new Date(selectedSlot).toLocaleString("fa-IR", { dateStyle: "full", timeStyle: "short" })}{selectedService ? ` — ${selectedService.durationMinutes} دقیقه` : ""}</p></div> : null}
+        {error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error} {error.startsWith("Please sign") ? <Link href="/login" className="font-bold underline">Sign in</Link> : null}</p> : null}
+        {message ? <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{message}</p> : null}
+        <button type="button" disabled={!selectedSlot || reserving} onClick={() => void reserve()} className="w-full rounded-xl bg-stone-900 px-5 py-3 font-bold text-white transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-40">{reserving ? "در حال ثبت رزرو…" : "تأیید و ثبت رزرو"}</button>
+      </div>
     </section>
   );
 }
