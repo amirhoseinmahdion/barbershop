@@ -15,6 +15,12 @@ export interface Salon {
   email: string | null;
   timezone: string;
   isActive: boolean;
+  admins?: Array<{
+    id: string;
+    phone: string;
+    firstName: string;
+    lastName: string;
+  }>;
 }
 
 export interface SalonService {

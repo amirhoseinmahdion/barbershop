@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import type { Environment } from "./config/env.js";
 import type { DatabaseConnection } from "./database/client.js";
 import { createAuthRouter } from "./modules/auth/auth.routes.js";
+import { createAvailabilityRouter, createBookingRouter } from "./modules/bookings/booking.routes.js";
 import { createAdminSalonRouter, createPlatformSalonRouter, createProfileRouter, createPublicSalonRouter } from "./modules/salons/salon.routes.js";
 import { openApiDocument } from "./openapi.js";
 import { AppError } from "./shared/errors/app-error.js";
@@ -72,6 +73,8 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
     app.use("/api/v1/users", createProfileRouter(database, environment));
     app.use("/api/v1/admin", createAdminSalonRouter(database, environment));
     app.use("/api/v1/platform", createPlatformSalonRouter(database, environment));
+    app.use("/api/v1/bookings", createBookingRouter(database, environment));
+    app.use("/api/v1/salons", createAvailabilityRouter(database));
     app.use("/api/v1/salons", createPublicSalonRouter(database));
   }
 
@@ -108,6 +111,10 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
       response.status(409).json({
         error: { code: "RESOURCE_CONFLICT", message: "The resource already exists.", details: null },
       });
+      return;
+    }
+    if (databaseCode === "23P01" || databaseCode === "40P01") {
+      response.status(409).json({ error: { code: "TIME_UNAVAILABLE", message: "This time is no longer available.", details: null } });
       return;
     }
     response.status(500).json({

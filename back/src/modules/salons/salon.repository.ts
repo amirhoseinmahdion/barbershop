@@ -43,9 +43,39 @@ export function createSalonRepository(database: Database) {
       const [salon] = await database.update(salons).set({ ...values, updatedAt: new Date() }).where(eq(salons.id, salonId)).returning();
       return salon;
     },
-    listAllSalons: async () => database.select().from(salons).orderBy(asc(salons.name)),
+    listAllSalons: async () => {
+      const rows = await database
+        .select({ salon: salons, admin: { id: users.id, phone: users.phone, firstName: users.firstName, lastName: users.lastName } })
+        .from(salons)
+        .leftJoin(salonAdmins, eq(salonAdmins.salonId, salons.id))
+        .leftJoin(users, eq(users.id, salonAdmins.userId))
+        .orderBy(asc(salons.name), asc(users.phone));
+
+      const salonMap = new Map<string, (typeof rows)[number]["salon"] & {
+        admins: Array<{ id: string; phone: string; firstName: string; lastName: string }>;
+      }>();
+
+      for (const row of rows) {
+        const salon = salonMap.get(row.salon.id) ?? { ...row.salon, admins: [] };
+        if (row.admin?.id && row.admin.phone && row.admin.firstName && row.admin.lastName) {
+          salon.admins.push({
+            id: row.admin.id,
+            phone: row.admin.phone,
+            firstName: row.admin.firstName,
+            lastName: row.admin.lastName,
+          });
+        }
+        salonMap.set(row.salon.id, salon);
+      }
+
+      return [...salonMap.values()];
+    },
     createSalon: async (values: SalonCreate) => {
       const [salon] = await database.insert(salons).values(values).returning(); return salon;
+    },
+    deleteSalon: async (salonId: string) => {
+      const [salon] = await database.delete(salons).where(eq(salons.id, salonId)).returning();
+      return salon;
     },
     assignAdminByPhone: async (salonId: string, phone: string) => database.transaction(async (transaction) => {
       const user = await transaction.query.users.findFirst({ where: eq(users.phone, phone) });

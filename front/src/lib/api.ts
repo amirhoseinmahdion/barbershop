@@ -1,4 +1,5 @@
-import { getApiUrl } from "./api-url";
+import { type AxiosRequestConfig, isAxiosError } from "axios";
+import client from "./axios";
 
 interface ErrorPayload { error?: { message?: string } }
 
@@ -9,15 +10,21 @@ export class ApiRequestError extends Error {
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(getApiUrl(path), {
-    ...init,
-    credentials: "include",
-    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
-  });
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
-    throw new ApiRequestError(payload.error?.message ?? "The request could not be completed.", response.status);
+  const config: AxiosRequestConfig = {
+    method: init.method as AxiosRequestConfig["method"],
+    headers: init.headers as Record<string, string> | undefined,
+    data: init.body ? (typeof init.body === "string" ? JSON.parse(init.body) : init.body) : undefined,
+  };
+
+  try {
+    const res = await client.request<T>({ url: path, ...config });
+    if (res.status === 204) return undefined as T;
+    return res.data as T;
+  } catch (err: unknown) {
+    if (isAxiosError<ErrorPayload>(err) && err.response) {
+      const payload = (err.response.data ?? {}) as ErrorPayload;
+      throw new ApiRequestError(payload.error?.message ?? "The request could not be completed.", err.response.status);
+    }
+    throw err;
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }

@@ -23,6 +23,7 @@ export const openApiDocument = {
     { name: "Profiles", description: "Authenticated account profiles" },
     { name: "Salons", description: "Public salon and service discovery" },
     { name: "Salon administration", description: "Tenant-scoped salon and service management" },
+    { name: "Platform administration", description: "Platform-wide salon provisioning" },
   ],
   paths: {
     "/api/v1/auth/register": {
@@ -105,6 +106,32 @@ export const openApiDocument = {
         tags: ["Salons"], summary: "List active salon services", operationId: "listSalonServices",
         parameters: [{ name: "salonId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
         responses: { "200": { description: "Active services.", content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceList" } } } } },
+      },
+    },
+    "/api/v1/platform/salons": {
+      get: {
+        tags: ["Platform administration"], summary: "List all salons", operationId: "listPlatformSalons", security: [{ accessCookie: [] }],
+        responses: { "200": { description: "All salons.", content: { "application/json": { schema: { $ref: "#/components/schemas/SalonList" } } } }, "403": { description: "Platform administrator role required." } },
+      },
+      post: {
+        tags: ["Platform administration"], summary: "Create a salon", operationId: "createPlatformSalon", security: [{ accessCookie: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/SalonCreate" } } } },
+        responses: { "201": { description: "Salon created." }, "403": { description: "Platform administrator role required." }, "409": { $ref: "#/components/responses/Conflict" }, "422": { $ref: "#/components/responses/ValidationError" } },
+      },
+    },
+    "/api/v1/platform/salons/{salonId}": {
+      delete: {
+        tags: ["Platform administration"], summary: "Delete a salon without booking history", operationId: "deletePlatformSalon", security: [{ accessCookie: [] }],
+        parameters: [{ name: "salonId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "204": { description: "Salon deleted." }, "403": { description: "Platform administrator role required." }, "404": { description: "Salon not found." }, "409": { description: "Salon has booking history and cannot be deleted." }, "422": { $ref: "#/components/responses/ValidationError" } },
+      },
+    },
+    "/api/v1/platform/salons/{salonId}/admins": {
+      post: {
+        tags: ["Platform administration"], summary: "Assign a salon administrator by phone", operationId: "assignSalonAdministrator", security: [{ accessCookie: [] }],
+        parameters: [{ name: "salonId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["phone"], properties: { phone: { type: "string" } }, additionalProperties: false } } } },
+        responses: { "201": { description: "Administrator assigned." }, "403": { description: "Platform administrator role required." }, "404": { description: "Salon or eligible administrator not found." }, "422": { $ref: "#/components/responses/ValidationError" } },
       },
     },
     "/api/v1/admin/salon": {
@@ -194,6 +221,7 @@ export const openApiDocument = {
       },
       ProfileUpdate: { type: "object", additionalProperties: false, minProperties: 1, properties: { firstName: { type: "string", maxLength: 80 }, lastName: { type: "string", maxLength: 80 }, phone: { type: ["string", "null"], maxLength: 30 }, profileImageUrl: { type: ["string", "null"], format: "uri" } } },
       Salon: { type: "object", required: ["id", "slug", "name", "audience", "city", "countryCode", "timezone", "isActive"], properties: { id: { type: "string", format: "uuid" }, slug: { type: "string" }, name: { type: "string" }, description: { type: "string" }, audience: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] }, streetAddress: { type: "string" }, city: { type: "string" }, region: { type: ["string", "null"] }, postalCode: { type: ["string", "null"] }, countryCode: { type: "string" }, phone: { type: ["string", "null"] }, email: { type: ["string", "null"] }, timezone: { type: "string" }, isActive: { type: "boolean" } } },
+      SalonCreate: { type: "object", additionalProperties: false, required: ["slug", "name", "audience", "streetAddress"], properties: { slug: { type: "string", pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$", maxLength: 120 }, name: { type: "string", maxLength: 120 }, description: { type: "string", maxLength: 5000 }, audience: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] }, streetAddress: { type: "string", maxLength: 300 }, city: { type: "string", maxLength: 120 }, countryCode: { type: "string", pattern: "^[A-Z]{2}$" }, timezone: { type: "string", maxLength: 100 }, phone: { type: ["string", "null"], maxLength: 30 }, email: { type: ["string", "null"], format: "email" } } },
       SalonUpdate: { type: "object", additionalProperties: false, minProperties: 1, properties: { name: { type: "string" }, description: { type: "string" }, audience: { type: "string", enum: ["MEN", "WOMEN", "UNISEX"] }, streetAddress: { type: "string" }, city: { type: "string" }, region: { type: ["string", "null"] }, postalCode: { type: ["string", "null"] }, countryCode: { type: "string", pattern: "^[A-Z]{2}$" }, phone: { type: ["string", "null"] }, email: { type: ["string", "null"], format: "email" }, timezone: { type: "string" } } },
       SalonList: { type: "object", required: ["data", "nextCursor"], properties: { data: { type: "array", items: { $ref: "#/components/schemas/Salon" } }, nextCursor: { type: ["string", "null"], format: "uuid" } } },
       Service: { type: "object", required: ["id", "salonId", "name", "durationMinutes", "priceMinor", "currency", "isActive"], properties: { id: { type: "string", format: "uuid" }, salonId: { type: "string", format: "uuid" }, name: { type: "string" }, description: { type: "string" }, durationMinutes: { type: "integer" }, priceMinor: { type: "integer" }, currency: { type: "string" }, isActive: { type: "boolean" } } },

@@ -33,6 +33,20 @@ export function createPlatformSalonRouter(database: Database, environment: Envir
   router.use(authenticate(authRepository, environment), authorize("SUPER_ADMIN"));
   router.get("/salons", async (_request, response) => response.json({ data: await repository.listAllSalons(), nextCursor: null }));
   router.post("/salons", async (request, response) => response.status(201).json({ data: { salon: await repository.createSalon(salonCreateSchema.parse(request.body)) } }));
+  router.delete("/salons/:salonId", async (request, response) => {
+    const salonId = serviceIdSchema.parse(request.params.salonId);
+    try {
+      const salon = await repository.deleteSalon(salonId);
+      if (!salon) throw new AppError(404, "SALON_NOT_FOUND", "The salon was not found.");
+      response.status(204).send();
+    } catch (error) {
+      const databaseError = error as { code?: string; cause?: { code?: string } };
+      if ((databaseError.code ?? databaseError.cause?.code) === "23503") {
+        throw new AppError(409, "SALON_HAS_BOOKINGS", "A salon with booking history cannot be deleted.");
+      }
+      throw error;
+    }
+  });
   router.post("/salons/:salonId/admins", async (request, response) => {
     const salonId = serviceIdSchema.parse(request.params.salonId);
     if (!await repository.findSalonById(salonId)) throw new AppError(404, "SALON_NOT_FOUND", "The salon was not found.");

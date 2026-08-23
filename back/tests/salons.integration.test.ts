@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import request from "supertest";
@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import { loadEnvironment } from "../src/config/env.js";
 import { createDatabase } from "../src/database/client.js";
-import { salonAdmins, salons, services, users } from "../src/database/schema.js";
+import { bookings, salonAdmins, salons, services, users, weeklyHours } from "../src/database/schema.js";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const describeSalons = testDatabaseUrl ? describe : describe.skip;
@@ -56,6 +56,7 @@ describeSalons("profiles and salon management", () => {
       { salonId: salonTwoId, name: "Other Cut", durationMinutes: 30, priceMinor: 2000, currency: "USD" },
     ]).returning();
     otherServiceId = createdServices[2]!.id;
+    await connection.database.insert(weeklyHours).values({ salonId: salonOneId, dayOfWeek: 6, opensAt: "09:00:00", closesAt: "12:00:00" });
   });
 
   afterAll(async () => connection.pool.end());
@@ -157,10 +158,43 @@ describeSalons("profiles and salon management", () => {
     expect(created.body.data.salon).toMatchObject({ city: "Not specified", countryCode: "IR", timezone: "Asia/Tehran" });
     const salonId = created.body.data.salon.id as string;
     const assigned = await agent.post(`/api/v1/platform/salons/${salonId}/admins`).set("Origin", environment.FRONTEND_ORIGIN)
-      .send({ phone: "+989120000000" });
+      .send({ phone: "+16660000003" });
     expect(assigned.status).toBe(201);
     expect(assigned.body.data.user.role).toBe("SALON_ADMIN");
     const list = await agent.get("/api/v1/platform/salons");
-    expect(list.body.data.some((salon: { id: string }) => salon.id === salonId)).toBe(true);
+    expect(list.body.data.find((salon: { id: string }) => salon.id === salonId)).toMatchObject({
+      admins: [{ phone: "+16660000003", firstName: "Unassigned", lastName: "Admin" }],
+    });
+  });
+
+  it("lets only platform admins delete a salon without booking history", async () => {
+    const platformAdmin = await login("+16660000004");
+    const created = await platformAdmin.post("/api/v1/platform/salons").set("Origin", environment.FRONTEND_ORIGIN).send({
+      slug: "delete-me", name: "Delete Me", audience: "UNISEX", streetAddress: "11 New Street",
+    });
+    const salonId = created.body.data.salon.id as string;
+
+    const salonAdmin = await login("+16660000002");
+    expect((await salonAdmin.delete(`/api/v1/platform/salons/${salonId}`).set("Origin", environment.FRONTEND_ORIGIN)).status).toBe(403);
+    expect((await platformAdmin.delete(`/api/v1/platform/salons/${salonId}`).set("Origin", environment.FRONTEND_ORIGIN)).status).toBe(204);
+    expect(await connection.database.query.salons.findFirst({ where: eq(salons.id, salonId) })).toBeUndefined();
+    expect((await platformAdmin.delete(`/api/v1/platform/salons/${salonId}`).set("Origin", environment.FRONTEND_ORIGIN)).status).toBe(404);
+  });
+
+  it("lets customers reserve a backend-calculated salon service time", async () => {
+    const availability = await request(app).get(`/api/v1/salons/${salonOneId}/availability?serviceId=${otherServiceId}&date=2030-01-05`);
+    expect(availability.status).toBe(200);
+    // The service belongs to another salon, so cross-salon availability is empty.
+    expect(availability.body.data.slots).toEqual([]);
+    const ownService = await connection.database.query.services.findFirst({ where: (table, { and, eq }) => and(eq(table.salonId, salonOneId), eq(table.name, "Active Cut")) });
+    const slots = await request(app).get(`/api/v1/salons/${salonOneId}/availability?serviceId=${ownService!.id}&date=2030-01-05`);
+    expect(slots.body.data.slots.length).toBeGreaterThan(0);
+    const customer = await login("+989120000000");
+    const created = await customer.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN)
+      .send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[0] });
+    expect(created.status).toBe(201);
+    expect(await connection.database.query.bookings.findFirst({ where: eq(bookings.id, created.body.data.booking.id) })).toBeDefined();
+    const admin = await login("+16660000002");
+    expect((await admin.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN).send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[1] })).status).toBe(403);
   });
 });

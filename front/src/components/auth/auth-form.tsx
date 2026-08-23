@@ -28,13 +28,20 @@ export function AuthForm({ mode }: AuthFormProps) {
       password: String(form.get("password") ?? ""),
     };
     const validationErrors: Record<string, string> = {};
-    if (isRegistration && !values.firstName) validationErrors.firstName = "First name is required.";
-    if (isRegistration && !values.lastName) validationErrors.lastName = "Last name is required.";
+    if (isRegistration && !values.firstName)
+      validationErrors.firstName = "First name is required.";
+    if (isRegistration && !values.lastName)
+      validationErrors.lastName = "Last name is required.";
     if (!values.phone) validationErrors.phone = "Phone number is required.";
-    else if (!/^\+?[0-9]{7,15}$/.test(values.phone)) validationErrors.phone = "Enter 7 to 15 digits, optionally starting with +.";
-    if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) validationErrors.email = "Enter a valid email address.";
+    else if (!/^\+?[0-9]{7,15}$/.test(values.phone))
+      validationErrors.phone =
+        "Enter 7 to 15 digits, optionally starting with +.";
+    if (values.email && !/^\S+@\S+\.\S+$/.test(values.email))
+      validationErrors.email = "Enter a valid email address.";
     if (!values.password) validationErrors.password = "Password is required.";
-    else if (isRegistration && values.password.length < 8) validationErrors.password = "Password must contain at least 8 characters.";
+    else if (isRegistration && values.password.length < 8)
+      validationErrors.password =
+        "Password must contain at least 8 characters.";
     setFieldErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
     setIsSubmitting(true);
@@ -50,10 +57,17 @@ export function AuthForm({ mode }: AuthFormProps) {
       : { phone: values.phone, password: values.password };
 
     try {
-      const user = await authRequest(mode, { method: "POST", body: JSON.stringify(body) });
+      const user = await authRequest(mode, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
       router.replace(destinationForRole(user.role));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Authentication failed.");
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Authentication failed.",
+      );
       setIsSubmitting(false);
     }
   }
@@ -62,22 +76,71 @@ export function AuthForm({ mode }: AuthFormProps) {
     <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
       {isRegistration ? (
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="First name" name="firstName" autoComplete="given-name" error={fieldErrors.firstName} />
-          <Field label="Last name" name="lastName" autoComplete="family-name" error={fieldErrors.lastName} />
+          <Field
+            label="First name"
+            name="firstName"
+            autoComplete="given-name"
+            error={fieldErrors.firstName}
+          />
+          <Field
+            label="Last name"
+            name="lastName"
+            autoComplete="family-name"
+            error={fieldErrors.lastName}
+          />
         </div>
       ) : null}
-      {isRegistration ? <Field label="Email (optional)" name="email" type="email" autoComplete="email" required={false} error={fieldErrors.email} /> : null}
-      <Field label="Phone number" name="phone" type="tel" autoComplete="tel" error={fieldErrors.phone} />
-      <Field label="Password" name="password" type="password" autoComplete={isRegistration ? "new-password" : "current-password"} minLength={isRegistration ? 8 : undefined} error={fieldErrors.password} />
+      {isRegistration ? (
+        <Field
+          label="Email (optional)"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required={false}
+          error={fieldErrors.email}
+        />
+      ) : null}
+      <Field
+        label="Phone number"
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        error={fieldErrors.phone}
+      />
+      <Field
+        label="Password"
+        name="password"
+        type="password"
+        autoComplete={isRegistration ? "new-password" : "current-password"}
+        minLength={isRegistration ? 8 : undefined}
+        error={fieldErrors.password}
+      />
 
-      {error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {error}
+        </p>
+      ) : null}
 
-      <button disabled={isSubmitting} className="w-full rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white transition hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60">
-        {isSubmitting ? "Please wait…" : isRegistration ? "Create account" : "Sign in"}
+      <button
+        disabled={isSubmitting}
+        className="w-full rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white transition hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60"
+      >
+        {isSubmitting
+          ? "Please wait…"
+          : isRegistration
+            ? "Create account"
+            : "Sign in"}
       </button>
       <p className="text-center text-sm text-stone-600">
         {isRegistration ? "Already registered?" : "New to Salon Reserve?"}{" "}
-        <Link className="font-semibold text-amber-900 underline-offset-4 hover:underline" href={isRegistration ? "/login" : "/register"}>
+        <Link
+          className="font-semibold text-amber-900 underline-offset-4 hover:underline"
+          href={isRegistration ? "/login" : "/register"}
+        >
           {isRegistration ? "Sign in" : "Create an account"}
         </Link>
       </p>
@@ -95,7 +158,15 @@ interface FieldProps {
   error?: string;
 }
 
-function Field({ label, name, type = "text", autoComplete, required = true, minLength, error }: FieldProps) {
+function Field({
+  label,
+  name,
+  type = "text",
+  autoComplete,
+  required = true,
+  minLength,
+  error,
+}: FieldProps) {
   return (
     <label className="block text-sm font-medium text-stone-700">
       {label}
@@ -109,7 +180,14 @@ function Field({ label, name, type = "text", autoComplete, required = true, minL
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${name}-error` : undefined}
       />
-      {error ? <span id={`${name}-error`} className="mt-2 block text-sm font-medium text-red-600">{error}</span> : null}
+      {error ? (
+        <span
+          id={`${name}-error`}
+          className="mt-2 block text-sm font-medium text-red-600"
+        >
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
