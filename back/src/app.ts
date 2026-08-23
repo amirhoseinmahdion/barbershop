@@ -2,9 +2,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import express, { type Express, type Request, type Response } from "express";
 import swaggerUi from "swagger-ui-express";
+import { sql } from "drizzle-orm";
 import { ZodError } from "zod";
-import type { Environment } from "./config/env.js";
-import type { DatabaseConnection } from "./database/client.js";
+import { loadEnvironment, type Environment } from "./config/env.js";
+import { createDatabase, type DatabaseConnection } from "./database/client.js";
 import { createAuthRouter } from "./modules/auth/auth.routes.js";
 import { createAvailabilityRouter, createBookingRouter } from "./modules/bookings/booking.routes.js";
 import { createAdminSalonRouter, createPlatformSalonRouter, createProfileRouter, createPublicSalonRouter } from "./modules/salons/salon.routes.js";
@@ -123,4 +124,23 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
   });
 
   return app;
+}
+
+let serverlessApp: Express | undefined;
+
+export default function handler(request: Request, response: Response): void {
+  if (!serverlessApp) {
+    const environment = loadEnvironment();
+    const { database } = createDatabase(environment.DATABASE_URL);
+    serverlessApp = createApp({
+      frontendOrigin: environment.FRONTEND_ORIGIN,
+      database,
+      environment,
+      readinessCheck: async () => {
+        await database.execute(sql`select 1`);
+      },
+    });
+  }
+
+  serverlessApp(request, response);
 }
