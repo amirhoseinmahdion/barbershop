@@ -29,19 +29,19 @@ export function AuthForm({ mode }: AuthFormProps) {
     };
     const validationErrors: Record<string, string> = {};
     if (isRegistration && !values.firstName)
-      validationErrors.firstName = "First name is required.";
+      validationErrors.firstName = "نام الزامی است.";
     if (isRegistration && !values.lastName)
-      validationErrors.lastName = "Last name is required.";
-    if (!values.phone) validationErrors.phone = "Phone number is required.";
+      validationErrors.lastName = "نام خانوادگی الزامی است.";
+    if (!values.phone) validationErrors.phone = "شماره تلفن الزامی است.";
     else if (!/^\+?[0-9]{7,15}$/.test(values.phone))
       validationErrors.phone =
-        "Enter 7 to 15 digits, optionally starting with +.";
+        "شماره تلفن باید بین ۷ تا ۱۵ رقم باشد و می‌تواند با + شروع شود.";
     if (values.email && !/^\S+@\S+\.\S+$/.test(values.email))
-      validationErrors.email = "Enter a valid email address.";
-    if (!values.password) validationErrors.password = "Password is required.";
+      validationErrors.email = "یک ایمیل معتبر وارد کنید.";
+    if (!values.password) validationErrors.password = "رمز عبور الزامی است.";
     else if (isRegistration && values.password.length < 8)
       validationErrors.password =
-        "Password must contain at least 8 characters.";
+        "رمز عبور باید حداقل ۸ نویسه داشته باشد.";
     setFieldErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
     setIsSubmitting(true);
@@ -66,7 +66,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Authentication failed.",
+          : "ورود یا ثبت‌نام انجام نشد.",
       );
       setIsSubmitting(false);
     }
@@ -77,13 +77,13 @@ export function AuthForm({ mode }: AuthFormProps) {
       {isRegistration ? (
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
-            label="First name"
+            label="نام"
             name="firstName"
             autoComplete="given-name"
             error={fieldErrors.firstName}
           />
           <Field
-            label="Last name"
+            label="نام خانوادگی"
             name="lastName"
             autoComplete="family-name"
             error={fieldErrors.lastName}
@@ -92,7 +92,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       ) : null}
       {isRegistration ? (
         <Field
-          label="Email (optional)"
+          label="ایمیل (اختیاری)"
           name="email"
           type="email"
           autoComplete="email"
@@ -101,14 +101,14 @@ export function AuthForm({ mode }: AuthFormProps) {
         />
       ) : null}
       <Field
-        label="Phone number"
+        label="شماره تلفن"
         name="phone"
         type="tel"
         autoComplete="tel"
         error={fieldErrors.phone}
       />
       <Field
-        label="Password"
+        label="رمز عبور"
         name="password"
         type="password"
         autoComplete={isRegistration ? "new-password" : "current-password"}
@@ -130,18 +130,18 @@ export function AuthForm({ mode }: AuthFormProps) {
         className="w-full rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white transition hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60"
       >
         {isSubmitting
-          ? "Please wait…"
+          ? "لطفاً صبر کنید…"
           : isRegistration
-            ? "Create account"
-            : "Sign in"}
+            ? "ساخت حساب کاربری"
+            : "ورود"}
       </button>
       <p className="text-center text-sm text-stone-600">
-        {isRegistration ? "Already registered?" : "New to Salon Reserve?"}{" "}
+        {isRegistration ? "قبلاً ثبت‌نام کرده‌اید؟" : "هنوز حساب کاربری ندارید؟"}{" "}
         <Link
           className="font-semibold text-amber-900 underline-offset-4 hover:underline"
           href={isRegistration ? "/login" : "/register"}
         >
-          {isRegistration ? "Sign in" : "Create an account"}
+          {isRegistration ? "ورود" : "ساخت حساب کاربری"}
         </Link>
       </p>
     </form>

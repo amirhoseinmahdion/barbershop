@@ -47,7 +47,7 @@ export async function authRequest(path: string, init: RequestInit = {}): Promise
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ErrorResponse;
-    throw new ApiError(payload.error?.message ?? "The request could not be completed.", response.status);
+    throw new ApiError(payload.error?.message ?? "درخواست انجام نشد.", response.status);
   }
 
   const payload = (await response.json()) as AuthResponse;
@@ -67,6 +67,6 @@ export async function logoutSession(): Promise<void> {
   const response = await fetch(getApiUrl("auth/logout"), { method: "POST", credentials: "include" });
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as ErrorResponse;
-    throw new ApiError(payload.error?.message ?? "Could not sign out.", response.status);
+    throw new ApiError(payload.error?.message ?? "خروج از حساب انجام نشد.", response.status);
   }
 }

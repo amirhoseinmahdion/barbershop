@@ -4,9 +4,9 @@ export default function AdminPage() {
   return (
     <ProtectedPage
       allowedRole="SALON_ADMIN"
-      eyebrow="Salon dashboard"
-      title="Manage your salon"
-      description="Update your account, salon profile, and customer-facing services."
+      eyebrow="پنل مدیریت سالن"
+      title="مدیریت سالن شما"
+      description="پروفایل شخصی، اطلاعات سالن، خدمات و رزروهای مشتریان را مدیریت کنید."
       manageSalon
     />
   );

@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const foundations = [
-  "Discover men's, women's, and unisex salons",
-  "Choose services and available appointment times",
-  "Manage schedules and reservations from the salon dashboard",
+  "پیدا کردن سالن‌های مردانه، زنانه و مشترک",
+  "انتخاب خدمات و زمان‌های آزاد نوبت",
+  "مدیریت برنامه کاری و رزروها از پنل سالن",
 ];
 
 export default function HomePage() {
@@ -12,7 +12,7 @@ export default function HomePage() {
       <section className="w-full rounded-3xl border border-stone-200 bg-white p-8 shadow-sm md:p-14">
      
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-stone-900 md:text-6xl">
-          A better way to find and reserve your next salon visit.
+          ساده‌ترین راه برای پیدا کردن سالن و رزرو نوبت بعدی شما
         </h1>
     
         <div className="mt-8 flex flex-wrap gap-3">
@@ -20,13 +20,13 @@ export default function HomePage() {
             href="/register"
             className="rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white hover:bg-amber-900"
           >
-            Create account
+            ساخت حساب کاربری
           </Link>
           <Link
             href="/login"
             className="rounded-xl border border-stone-300 bg-white px-5 py-3 font-semibold text-stone-800 hover:bg-stone-100"
           >
-            Sign in
+            ورود
           </Link>
         </div>
         <ul className="mt-10 grid gap-4 md:grid-cols-3">

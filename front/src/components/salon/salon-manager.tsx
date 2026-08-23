@@ -35,7 +35,7 @@ export function SalonManager() {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Could not load salon management.",
+          : "اطلاعات مدیریت سالن دریافت نشد.",
       );
     }
   }, []);
@@ -66,10 +66,10 @@ export function SalonManager() {
         },
       );
       setSalon(payload.data.salon);
-      setMessage("Salon profile saved.");
+      setMessage("پروفایل سالن ذخیره شد.");
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : "Could not save salon.",
+        caught instanceof Error ? caught.message : "پروفایل سالن ذخیره نشد.",
       );
     }
   }
@@ -90,11 +90,11 @@ export function SalonManager() {
         }),
       });
       formElement.reset();
-      setMessage("Service created.");
+      setMessage("خدمت جدید ایجاد شد.");
       await load();
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : "Could not create service.",
+        caught instanceof Error ? caught.message : "خدمت ایجاد نشد.",
       );
     }
   }
@@ -107,17 +107,17 @@ export function SalonManager() {
         method: "PATCH",
         body: JSON.stringify({ isActive }),
       });
-      setMessage(isActive ? "Service activated." : "Service deactivated.");
+      setMessage(isActive ? "خدمت فعال شد." : "خدمت غیرفعال شد.");
       await load();
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : "Could not update service.",
+        caught instanceof Error ? caught.message : "خدمت ویرایش نشد.",
       );
     }
   }
 
   if (!salon && !error)
-    return <p className="mt-10 text-stone-600">Loading salon settings…</p>;
+    return <p className="mt-10 text-stone-600">در حال دریافت تنظیمات سالن…</p>;
 
   return (
     <div className="mt-10 space-y-8">
@@ -142,24 +142,24 @@ export function SalonManager() {
           onSubmit={updateSalon}
           className="rounded-2xl border border-stone-200 p-6"
         >
-          <h2 className="text-xl font-bold">Salon profile</h2>
+          <h2 className="text-xl font-bold">پروفایل سالن</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Input name="name" label="Salon name" defaultValue={salon.name} />
-            <Input name="city" label="City" defaultValue={salon.city} />
+            <Input name="name" label="نام سالن" defaultValue={salon.name} />
+            <Input name="city" label="شهر" defaultValue={salon.city} />
             <Input
               name="streetAddress"
-              label="Street address"
+              label="نشانی"
               defaultValue={salon.streetAddress}
             />
             <Input
               name="phone"
-              label="Phone"
+              label="شماره تلفن"
               defaultValue={salon.phone ?? ""}
               required={false}
             />
          
             <label className="sm:col-span-2 text-sm font-medium text-stone-700">
-              Description
+              توضیحات
               <textarea
                 name="description"
                 defaultValue={salon.description}
@@ -169,15 +169,15 @@ export function SalonManager() {
             </label>
           </div>
           <button className="mt-5 rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white">
-            Save salon profile
+            ذخیره پروفایل سالن
           </button>
         </form>
       ) : null}
 
       <section className="rounded-2xl border border-stone-200 p-6">
-        <h2 className="text-xl font-bold">Services</h2>
+        <h2 className="text-xl font-bold">خدمات</h2>
         {services.length === 0 ? (
-          <p className="mt-4 text-sm text-stone-600">No services yet.</p>
+          <p className="mt-4 text-sm text-stone-600">هنوز خدمتی ثبت نشده است.</p>
         ) : (
           <ul className="mt-5 space-y-3">
             {services.map((service) => (
@@ -188,8 +188,8 @@ export function SalonManager() {
                 <div>
                   <p className="font-semibold">{service.name}</p>
                   <p className="text-sm text-stone-600">
-                    {service.durationMinutes} min ·{" "}
-                    {service.isActive ? "Active" : "Inactive"}
+                    {service.durationMinutes} دقیقه ·{" "}
+                    {service.isActive ? "فعال" : "غیرفعال"}
                   </p>
                 </div>
                 <button
@@ -198,7 +198,7 @@ export function SalonManager() {
                   }
                   className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold"
                 >
-                  {service.isActive ? "Deactivate" : "Activate"}
+                  {service.isActive ? "غیرفعال کردن" : "فعال کردن"}
                 </button>
               </li>
             ))}
@@ -209,13 +209,13 @@ export function SalonManager() {
       <section className="rounded-2xl border border-stone-200 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold">Reservations</h2>
-            <p className="mt-1 text-sm text-stone-600">Customer appointments saved for your salon.</p>
+            <h2 className="text-xl font-bold">رزروها</h2>
+            <p className="mt-1 text-sm text-stone-600">نوبت‌های ثبت‌شده مشتریان سالن شما</p>
           </div>
-          <button type="button" onClick={() => void load()} className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold">Refresh</button>
+          <button type="button" onClick={() => void load()} className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-semibold">به‌روزرسانی</button>
         </div>
         {bookings.length === 0 ? (
-          <p className="mt-5 rounded-xl bg-stone-100 p-4 text-sm text-stone-600">No reservations yet.</p>
+          <p className="mt-5 rounded-xl bg-stone-100 p-4 text-sm text-stone-600">هنوز رزروی ثبت نشده است.</p>
         ) : (
           <ul className="mt-5 space-y-3">
             {bookings.map((booking) => (
@@ -223,9 +223,9 @@ export function SalonManager() {
                 <div>
                   <p className="font-bold">{booking.serviceName}</p>
                   <p className="mt-1 text-sm text-stone-700">{booking.customer.firstName} {booking.customer.lastName} · {booking.customer.phone}</p>
-                  <p className="mt-1 text-sm text-stone-600">{new Date(booking.startsAt).toLocaleString("fa-IR", { dateStyle: "full", timeStyle: "short" })} · {booking.durationMinutes} min</p>
+                  <p className="mt-1 text-sm text-stone-600">{new Date(booking.startsAt).toLocaleString("fa-IR", { dateStyle: "full", timeStyle: "short" })} · {booking.durationMinutes} دقیقه</p>
                 </div>
-                <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">{booking.status}</span>
+                <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">{{ PENDING: "در انتظار", CONFIRMED: "تأییدشده", CANCELLED: "لغوشده", COMPLETED: "انجام‌شده", NO_SHOW: "عدم مراجعه" }[booking.status]}</span>
               </li>
             ))}
           </ul>
@@ -236,17 +236,17 @@ export function SalonManager() {
         onSubmit={createService}
         className="rounded-2xl border border-stone-200 p-6"
       >
-        <h2 className="text-xl font-bold">Add service</h2>
+        <h2 className="text-xl font-bold">افزودن خدمت</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Input name="serviceName" label="Service name" />
+          <Input name="serviceName" label="نام خدمت" />
           <Input
             name="durationMinutes"
-            label="Duration (minutes)"
+            label="مدت‌زمان (دقیقه)"
             type="number"
             min="5"
           />
           <label className="sm:col-span-2 text-sm font-medium text-stone-700">
-            Description
+            توضیحات
             <textarea
               name="serviceDescription"
               rows={3}
@@ -255,7 +255,7 @@ export function SalonManager() {
           </label>
         </div>
         <button className="mt-5 rounded-xl bg-amber-800 px-5 py-3 font-semibold text-white">
-          Create service
+          ایجاد خدمت
         </button>
       </form>
     </div>

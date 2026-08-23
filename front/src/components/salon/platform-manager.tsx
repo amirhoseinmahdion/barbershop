@@ -35,10 +35,10 @@ export function PlatformManager() {
         }),
       });
       formElement.reset();
-      setMessage("Salon created.");
+      setMessage("سالن ایجاد شد.");
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create salon.");
+      setError(e instanceof Error ? e.message : "سالن ایجاد نشد.");
     }
   }
   async function assign(event: FormEvent<HTMLFormElement>, salonId: string) {
@@ -53,11 +53,11 @@ export function PlatformManager() {
         body: JSON.stringify({ phone }),
       });
       formElement.reset();
-      setMessage("Salon administrator assigned.");
+      setMessage("مدیر سالن تعیین شد.");
       await load();
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Could not assign administrator.",
+        e instanceof Error ? e.message : "تعیین مدیر سالن انجام نشد.",
       );
     }
   }
@@ -69,9 +69,9 @@ export function PlatformManager() {
     try {
       await apiRequest(`platform/salons/${salon.id}`, { method: "DELETE" });
       setSalons((current) => current.filter((item) => item.id !== salon.id));
-      setMessage("Salon deleted.");
+      setMessage("سالن حذف شد.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete salon.");
+      setError(e instanceof Error ? e.message : "سالن حذف نشد.");
     } finally {
       setDeletingSalonId(null);
     }
@@ -96,31 +96,31 @@ export function PlatformManager() {
         onSubmit={createSalon}
         className="rounded-2xl border border-stone-200 p-6"
       >
-        <h2 className="text-xl font-bold">Add hair salon</h2>
+        <h2 className="text-xl font-bold">افزودن سالن زیبایی</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Field name="name" label="Salon name" />
-          <Field name="slug" label="URL name" placeholder="central-salon" />
-          <Field name="streetAddress" label="Address" />
+          <Field name="name" label="نام سالن" />
+          <Field name="slug" label="نام انگلیسی نشانی اینترنتی" placeholder="central-salon" />
+          <Field name="streetAddress" label="نشانی" />
           <label className="text-sm font-medium">
-            Audience
+            نوع سالن
             <select
               name="audience"
               className="mt-2 w-full rounded-xl border border-stone-300 px-4 py-3"
             >
-              <option value="UNISEX">Unisex</option>
-              <option value="MEN">Men</option>
-              <option value="WOMEN">Women</option>
+              <option value="UNISEX">مشترک</option>
+              <option value="MEN">مردانه</option>
+              <option value="WOMEN">زنانه</option>
             </select>
           </label>
         </div>
         <button className="mt-5 rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white">
-          Create salon
+          ایجاد سالن
         </button>
       </form>
       <section>
-        <h2 className="text-xl font-bold">Salon list</h2>
+        <h2 className="text-xl font-bold">فهرست سالن‌ها</h2>
         {salons.length === 0 ? (
-          <p className="mt-4">No salons.</p>
+          <p className="mt-4">سالنی ثبت نشده است.</p>
         ) : (
           <ul className="mt-4 space-y-4">
             {salons.map((salon) => (
@@ -129,22 +129,7 @@ export function PlatformManager() {
                 <p className="text-sm text-stone-600">
                   {salon.streetAddress}
                 </p>
-                <div className="mt-3 text-sm">
-                  <p className="font-semibold text-stone-800">
-                    Assigned administrator{salon.admins?.length === 1 ? "" : "s"}
-                  </p>
-                  {salon.admins?.length ? (
-                    <ul className="mt-1 space-y-1 text-stone-700">
-                      {salon.admins.map((admin) => (
-                        <li key={admin.id}>
-                          {admin.firstName} {admin.lastName}: {admin.phone}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-1 text-stone-500">No administrator assigned.</p>
-                  )}
-                </div>
+            
                 <form
                   onSubmit={(event) => void assign(event, salon.id)}
                   className="mt-4 flex gap-2"
@@ -154,11 +139,11 @@ export function PlatformManager() {
                     name="adminPhone"
                     required
                     defaultValue={salon.admins?.[0]?.phone ?? ""}
-                    placeholder="Admin phone number"
+                    placeholder="شماره تلفن مدیر سالن"
                     className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-4 py-2"
                   />
                   <button className="rounded-xl bg-amber-800 px-4 py-2 text-sm font-semibold text-white">
-                    Assign admin
+                    تعیین مدیر
                   </button>
                 </form>
                 <button
@@ -167,7 +152,7 @@ export function PlatformManager() {
                   onClick={() => void deleteSalon(salon)}
                   className="mt-3 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {deletingSalonId === salon.id ? "Deleting…" : "Delete salon"}
+                  {deletingSalonId === salon.id ? "در حال حذف…" : "حذف سالن"}
                 </button>
               </li>
             ))}

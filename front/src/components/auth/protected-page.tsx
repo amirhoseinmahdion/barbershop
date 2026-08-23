@@ -63,7 +63,7 @@ export function ProtectedPage({
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Could not sign out.",
+          : "خروج از حساب انجام نشد.",
       );
     }
   }
@@ -86,12 +86,12 @@ export function ProtectedPage({
         },
       );
       setUser(payload.data.user);
-      setMessage("Profile saved.");
+      setMessage("پروفایل ذخیره شد.");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "Could not save profile.",
+          : "پروفایل ذخیره نشد.",
       );
     }
   }
@@ -99,7 +99,7 @@ export function ProtectedPage({
   if (!user)
     return (
       <main className="grid min-h-screen place-items-center text-stone-600">
-        Restoring your session…
+        در حال بازیابی نشست شما…
       </main>
     );
 
@@ -122,7 +122,7 @@ export function ProtectedPage({
             onClick={logout}
             className="rounded-xl border border-stone-300 px-5 py-2.5 text-sm font-semibold hover:bg-stone-100"
           >
-            Sign out
+            خروج
           </button>
         </div>
         <form
@@ -130,17 +130,17 @@ export function ProtectedPage({
           className="mt-10 rounded-2xl bg-stone-100 p-6"
         >
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-bold">Account profile</h2>
+            <h2 className="text-lg font-bold">پروفایل کاربری</h2>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-              {user.role.replace("_", " ")}
+              {{ CUSTOMER: "مشتری", SALON_ADMIN: "مدیر سالن", SUPER_ADMIN: "مدیر کل" }[user.role]}
             </span>
           </div>
           <p className="mt-2 text-sm text-stone-600">
-            {user.email ?? "No email provided"}
+            {user.email ?? "ایمیلی ثبت نشده است"}
           </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <label className="text-sm font-medium">
-              First name
+              نام
               <input
                 name="firstName"
                 defaultValue={user.firstName}
@@ -149,7 +149,7 @@ export function ProtectedPage({
               />
             </label>
             <label className="text-sm font-medium">
-              Last name
+              نام خانوادگی
               <input
                 name="lastName"
                 defaultValue={user.lastName}
@@ -158,7 +158,7 @@ export function ProtectedPage({
               />
             </label>
             <label className="text-sm font-medium">
-              Phone
+              شماره تلفن
               <input
                 name="phone"
                 defaultValue={user.phone ?? ""}
@@ -167,7 +167,7 @@ export function ProtectedPage({
             </label>
           </div>
           <button className="mt-5 rounded-xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white">
-            Save profile
+            ذخیره پروفایل
           </button>
         </form>
         {manageSalon ? <SalonManager /> : null}

@@ -23,7 +23,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   } catch (err: unknown) {
     if (isAxiosError<ErrorPayload>(err) && err.response) {
       const payload = (err.response.data ?? {}) as ErrorPayload;
-      throw new ApiRequestError(payload.error?.message ?? "The request could not be completed.", err.response.status);
+      throw new ApiRequestError(payload.error?.message ?? "درخواست انجام نشد.", err.response.status);
     }
     throw err;
   }

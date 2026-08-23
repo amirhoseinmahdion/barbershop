@@ -18,7 +18,7 @@ export default async function SalonDetailPage({
     { cache: "no-store" },
   );
   if (salonResponse.status === 404) notFound();
-  if (!salonResponse.ok) throw new Error("Could not load salon details.");
+  if (!salonResponse.ok) throw new Error("اطلاعات سالن دریافت نشد.");
   const {
     data: { salon },
   } = (await salonResponse.json()) as { data: { salon: Salon } };
@@ -37,17 +37,17 @@ export default async function SalonDetailPage({
           href="/salons"
           className="text-sm font-semibold text-amber-900 hover:underline"
         >
-          ← All salons
+          همه سالن‌ها ←
         </Link>
         <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm md:p-12">
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-            {salon.audience}
+            {{ MEN: "مردانه", WOMEN: "زنانه", UNISEX: "مشترک" }[salon.audience]}
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight text-stone-900">
             {salon.name}
           </h1>
           <p className="mt-4 max-w-3xl leading-7 text-stone-600">
-            {salon.description || "Professional salon services."}
+            {salon.description || "خدمات حرفه‌ای سالن زیبایی"}
           </p>
           <address className="mt-7 not-italic text-sm leading-6 text-stone-600">
             {salon.streetAddress}
@@ -56,8 +56,8 @@ export default async function SalonDetailPage({
             {salon.region ? `, ${salon.region}` : ""} · {salon.countryCode}
           </address>
         </section>
-        <section className="mt-10">
-          <h2 className="text-2xl font-bold text-stone-900">Services</h2>
+        {/* <section className="mt-10">
+          <h2 className="text-2xl font-bold text-stone-900">خدمات</h2>
           {servicePayload.data.length === 0 ? (
             <p className="mt-5 rounded-2xl bg-white p-6 text-stone-600">
               No active services are listed yet.
@@ -78,7 +78,7 @@ export default async function SalonDetailPage({
               ))}
             </ul>
           )}
-        </section>
+        </section> */}
         <ReservationPicker salonId={salon.id} services={servicePayload.data} />
       </main>
     </>
