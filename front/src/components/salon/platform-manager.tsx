@@ -150,8 +150,10 @@ export function PlatformManager() {
                   className="mt-4 flex gap-2"
                 >
                   <input
+                    key={salon.admins?.[0]?.phone ?? "unassigned"}
                     name="adminPhone"
                     required
+                    defaultValue={salon.admins?.[0]?.phone ?? ""}
                     placeholder="Admin phone number"
                     className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-4 py-2"
                   />
