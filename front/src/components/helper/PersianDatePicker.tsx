@@ -4,6 +4,7 @@ import DatePicker, { DateObject } from "react-multi-date-picker";
 import persian from "react-date-object/calendars/persian";
 import gregorian from "react-date-object/calendars/gregorian";
 import persianFa from "react-date-object/locales/persian_fa";
+import gregorianEn from "react-date-object/locales/gregorian_en";
 
 interface PersianDatePickerProps {
   value: string;
@@ -20,7 +21,7 @@ export default function PersianDatePicker({ value, onChange, disabled = false }:
 
   function selectDate(date: DateObject | null) {
     if (!date) return;
-    onChange(new DateObject(date).convert(gregorian).format("YYYY-MM-DD"));
+    onChange(new DateObject(date).convert(gregorian, gregorianEn).format("YYYY-MM-DD"));
   }
 
   return (
