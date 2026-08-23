@@ -1,6 +1,8 @@
 import { Router } from "express";
+import { eq } from "drizzle-orm";
 import type { Environment } from "../../config/env.js";
 import type { DatabaseConnection } from "../../database/client.js";
+import { salons } from "../../database/schema.js";
 import { AppError } from "../../shared/errors/app-error.js";
 import { authenticate, authorize } from "../auth/auth.middleware.js";
 import { createAuthRepository } from "../auth/auth.repository.js";
@@ -11,7 +13,7 @@ export function createBookingRouter(database: Database, environment: Environment
   const router=Router(); const repository=createBookingRepository(database); const auth=createAuthRepository(database);
   router.post("/", authenticate(auth,environment), authorize("CUSTOMER"), async (request,response)=>{
     const input=bookingCreateSchema.parse(request.body);
-    const salon=await database.query.salons.findFirst({ where:(table,{eq})=>eq(table.id,input.salonId) });
+    const [salon] = await database.select().from(salons).where(eq(salons.id, input.salonId)).limit(1);
     if (!salon) throw new AppError(404,"SALON_NOT_FOUND","The salon was not found.");
     const localDate=new Intl.DateTimeFormat("en-CA",{timeZone:salon.timezone,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(input.startsAt));
     const slots=await repository.availability(input.salonId,input.serviceId,localDate);
