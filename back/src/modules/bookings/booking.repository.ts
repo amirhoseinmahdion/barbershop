@@ -21,7 +21,7 @@ export function createBookingRepository(database: Database) {
         select generate_series(
           (${localDate}::date+p.opens_at) at time zone s.timezone,
           ((${localDate}::date+p.closes_at) at time zone s.timezone) - make_interval(mins=>s.duration_minutes),
-          interval '15 minutes'
+          interval '60 minutes'
         ) starts_at, s.duration_minutes from periods p cross join selected s
       ) select starts_at from slots
       where starts_at > now() and not exists (
