@@ -39,7 +39,7 @@ export default async function SalonDetailPage({
         >
           همه سالن‌ها ←
         </Link>
-        <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm md:p-12">
+        {/* <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-8 shadow-sm md:p-12">
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
             {{ MEN: "مردانه", WOMEN: "زنانه", UNISEX: "مشترک" }[salon.audience]}
           </span>
@@ -47,15 +47,14 @@ export default async function SalonDetailPage({
             {salon.name}
           </h1>
           <p className="mt-4 max-w-3xl leading-7 text-stone-600">
-            {salon.description || "خدمات حرفه‌ای سالن زیبایی"}
+            {salon.description || ""}
           </p>
           <address className="mt-7 not-italic text-sm leading-6 text-stone-600">
             {salon.streetAddress}
             <br />
             {salon.city}
-            {salon.region ? `, ${salon.region}` : ""} · {salon.countryCode}
           </address>
-        </section>
+        </section> */}
         {/* <section className="mt-10">
           <h2 className="text-2xl font-bold text-stone-900">خدمات</h2>
           {servicePayload.data.length === 0 ? (

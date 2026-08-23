@@ -96,7 +96,7 @@ export function PlatformManager() {
         onSubmit={createSalon}
         className="rounded-2xl border border-stone-200 p-6"
       >
-        <h2 className="text-xl font-bold">افزودن سالن زیبایی</h2>
+        <h2 className="text-xl font-bold">افزودن سالن </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field name="name" label="نام سالن" />
           <Field name="slug" label="نام انگلیسی نشانی اینترنتی" placeholder="central-salon" />

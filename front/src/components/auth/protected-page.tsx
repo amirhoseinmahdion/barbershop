@@ -25,8 +25,6 @@ interface ProtectedPageProps {
 export function ProtectedPage({
   allowedRole,
   eyebrow,
-  title,
-  description,
   manageSalon = false,
   managePlatform = false,
 }: ProtectedPageProps) {
@@ -111,12 +109,12 @@ export function ProtectedPage({
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-800">
               {eyebrow}
             </p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-stone-900">
+            {/* <h1 className="mt-3 text-4xl font-bold tracking-tight text-stone-900">
               {title}
             </h1>
             <p className="mt-4 max-w-2xl leading-7 text-stone-600">
               {description}
-            </p>
+            </p> */}
           </div>
           <button
             onClick={logout}
@@ -135,9 +133,9 @@ export function ProtectedPage({
               {{ CUSTOMER: "مشتری", SALON_ADMIN: "مدیر سالن", SUPER_ADMIN: "مدیر کل" }[user.role]}
             </span>
           </div>
-          <p className="mt-2 text-sm text-stone-600">
+          {/* <p className="mt-2 text-sm text-stone-600">
             {user.email ?? "ایمیلی ثبت نشده است"}
-          </p>
+          </p> */}
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <label className="text-sm font-medium">
               نام
