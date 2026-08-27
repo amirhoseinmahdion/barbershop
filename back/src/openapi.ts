@@ -2,7 +2,7 @@ export const openApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Hair Salon Platform API",
-    version: "0.3.0",
+    version: "0.5.0",
     description: "Express API for salon news, schedules, and appointment reservations.",
   },
   servers: [
@@ -22,6 +22,8 @@ export const openApiDocument = {
     },
     { name: "Profiles", description: "Authenticated account profiles" },
     { name: "Salons", description: "Public salon and service discovery" },
+    { name: "Availability", description: "Public appointment availability calculated by the backend" },
+    { name: "Bookings", description: "Authenticated customer reservations" },
     { name: "Salon administration", description: "Tenant-scoped salon and service management" },
     { name: "Platform administration", description: "Platform-wide salon provisioning" },
   ],
@@ -108,6 +110,34 @@ export const openApiDocument = {
         responses: { "200": { description: "Active services.", content: { "application/json": { schema: { $ref: "#/components/schemas/ServiceList" } } } } },
       },
     },
+    "/api/v1/salons/{salonId}/availability": {
+      get: {
+        tags: ["Availability"], summary: "Get available appointment times", operationId: "getSalonAvailability",
+        parameters: [
+          { name: "salonId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "serviceId", in: "query", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "date", in: "query", required: true, description: "Salon-local calendar date.", schema: { type: "string", format: "date" } },
+        ],
+        responses: {
+          "200": { description: "Available start times as ISO 8601 UTC timestamps.", content: { "application/json": { schema: { $ref: "#/components/schemas/AvailabilityResponse" } } } },
+          "422": { $ref: "#/components/responses/ValidationError" },
+        },
+      },
+    },
+    "/api/v1/bookings": {
+      post: {
+        tags: ["Bookings"], summary: "Create a customer reservation", operationId: "createBooking", security: [{ accessCookie: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/BookingCreate" } } } },
+        responses: {
+          "201": { description: "Reservation created.", content: { "application/json": { schema: { $ref: "#/components/schemas/BookingResponse" } } } },
+          "401": { $ref: "#/components/responses/Unauthorized" },
+          "403": { description: "Customer role required.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+          "404": { description: "Salon not found.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+          "409": { description: "The selected time is no longer available.", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+          "422": { $ref: "#/components/responses/ValidationError" },
+        },
+      },
+    },
     "/api/v1/platform/salons": {
       get: {
         tags: ["Platform administration"], summary: "List all salons", operationId: "listPlatformSalons", security: [{ accessCookie: [] }],
@@ -147,6 +177,19 @@ export const openApiDocument = {
         tags: ["Salon administration"], summary: "List reservations for the assigned salon", operationId: "listManagedBookings", security: [{ accessCookie: [] }],
         parameters: [{ $ref: "#/components/parameters/AdminSalonId" }],
         responses: { "200": { description: "Assigned-salon reservations with customer contact details." }, "403": { description: "Role or salon assignment denied." } },
+      },
+    },
+    "/api/v1/admin/schedule/weekly": {
+      get: {
+        tags: ["Salon administration"], summary: "Get weekly working hours", operationId: "getWeeklySchedule", security: [{ accessCookie: [] }],
+        parameters: [{ $ref: "#/components/parameters/AdminSalonId" }],
+        responses: { "200": { description: "Weekly working periods.", content: { "application/json": { schema: { $ref: "#/components/schemas/WeeklyScheduleResponse" } } } }, "403": { description: "Role or assignment denied." } },
+      },
+      put: {
+        tags: ["Salon administration"], summary: "Replace weekly working hours", operationId: "replaceWeeklySchedule", security: [{ accessCookie: [] }],
+        parameters: [{ $ref: "#/components/parameters/AdminSalonId" }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/WeeklyScheduleWrite" } } } },
+        responses: { "200": { description: "Weekly schedule replaced.", content: { "application/json": { schema: { $ref: "#/components/schemas/WeeklyScheduleResponse" } } } }, "403": { description: "Role or assignment denied." }, "422": { $ref: "#/components/responses/ValidationError" } },
       },
     },
     "/api/v1/admin/services/{serviceId}": {
@@ -234,6 +277,38 @@ export const openApiDocument = {
       Service: { type: "object", required: ["id", "salonId", "name", "durationMinutes", "priceMinor", "currency", "isActive"], properties: { id: { type: "string", format: "uuid" }, salonId: { type: "string", format: "uuid" }, name: { type: "string" }, description: { type: "string" }, durationMinutes: { type: "integer" }, priceMinor: { type: "integer" }, currency: { type: "string" }, isActive: { type: "boolean" } } },
       ServiceWrite: { type: "object", additionalProperties: false, properties: { name: { type: "string" }, description: { type: "string" }, durationMinutes: { type: "integer", minimum: 5, maximum: 720 }, priceMinor: { type: "integer", minimum: 1 }, currency: { type: "string", pattern: "^[A-Z]{3}$" }, isActive: { type: "boolean" } } },
       ServiceList: { type: "object", required: ["data", "nextCursor"], properties: { data: { type: "array", items: { $ref: "#/components/schemas/Service" } }, nextCursor: { type: ["string", "null"], format: "uuid" } } },
+      AvailabilityResponse: {
+        type: "object", additionalProperties: false, required: ["data"],
+        properties: { data: { type: "object", additionalProperties: false, required: ["slots"], properties: { slots: { type: "array", items: { type: "string", format: "date-time" } } } } },
+      },
+      BookingCreate: {
+        type: "object", additionalProperties: false, required: ["salonId", "serviceId", "startsAt"],
+        properties: { salonId: { type: "string", format: "uuid" }, serviceId: { type: "string", format: "uuid" }, startsAt: { type: "string", format: "date-time" } },
+      },
+      Booking: {
+        type: "object",
+        required: ["id", "salonId", "serviceId", "customerId", "startsAt", "endsAt", "status", "serviceName", "durationMinutes", "priceMinor", "currency"],
+        properties: {
+          id: { type: "string", format: "uuid" }, salonId: { type: "string", format: "uuid" }, serviceId: { type: "string", format: "uuid" }, customerId: { type: "string", format: "uuid" },
+          startsAt: { type: "string", format: "date-time" }, endsAt: { type: "string", format: "date-time" }, status: { type: "string", enum: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"] },
+          serviceName: { type: "string" }, durationMinutes: { type: "integer", minimum: 1 }, priceMinor: { type: "integer", minimum: 1 }, currency: { type: "string", pattern: "^[A-Z]{3}$" },
+          customerNote: { type: ["string", "null"] }, cancellationReason: { type: ["string", "null"] }, cancelledAt: { type: ["string", "null"], format: "date-time" },
+          createdAt: { type: "string", format: "date-time" }, updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      BookingResponse: {
+        type: "object", additionalProperties: false, required: ["data"],
+        properties: { data: { type: "object", additionalProperties: false, required: ["booking"], properties: { booking: { $ref: "#/components/schemas/Booking" } } } },
+      },
+      WeeklyPeriodWrite: {
+        type: "object", additionalProperties: false, required: ["dayOfWeek", "opensAt", "closesAt"],
+        properties: { dayOfWeek: { type: "integer", minimum: 0, maximum: 6 }, opensAt: { type: "string", pattern: "^([01]\\d|2[0-3]):[0-5]\\d$" }, closesAt: { type: "string", pattern: "^([01]\\d|2[0-3]):[0-5]\\d$" } },
+      },
+      WeeklyScheduleWrite: { type: "object", additionalProperties: false, required: ["periods"], properties: { periods: { type: "array", items: { $ref: "#/components/schemas/WeeklyPeriodWrite" } } } },
+      WeeklyPeriod: {
+        allOf: [{ $ref: "#/components/schemas/WeeklyPeriodWrite" }, { type: "object", required: ["id", "salonId", "isActive"], properties: { id: { type: "string", format: "uuid" }, salonId: { type: "string", format: "uuid" }, isActive: { type: "boolean" } } }],
+      },
+      WeeklyScheduleResponse: { type: "object", required: ["data"], properties: { data: { type: "object", required: ["periods"], properties: { periods: { type: "array", items: { $ref: "#/components/schemas/WeeklyPeriod" } } } } } },
       AuthResponse: {
         type: "object", additionalProperties: false, required: ["data"],
         properties: { data: { type: "object", additionalProperties: false, required: ["user"], properties: { user: { $ref: "#/components/schemas/User" } } } },

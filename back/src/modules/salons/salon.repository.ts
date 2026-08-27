@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, gt, ilike, or, type SQL } from "drizzle-orm";
 import type { DatabaseConnection } from "../../database/client.js";
-import { bookings, salonAdmins, salons, services, users } from "../../database/schema.js";
-import type { ProfileUpdate, SalonCreate, SalonUpdate, ServiceCreate, ServiceUpdate } from "./salon.validation.js";
+import { bookings, salonAdmins, salons, services, users, weeklyHours } from "../../database/schema.js";
+import type { ProfileUpdate, SalonCreate, SalonUpdate, ServiceCreate, ServiceUpdate, WeeklySchedule } from "./salon.validation.js";
 
 type Database = DatabaseConnection["database"];
 
@@ -116,6 +116,14 @@ export function createSalonRepository(database: Database) {
       .where(eq(bookings.salonId, salonId))
       .orderBy(desc(bookings.startsAt))
       .limit(100),
+    listWeeklyHours: async (salonId: string) => database.select().from(weeklyHours)
+      .where(eq(weeklyHours.salonId, salonId)).orderBy(asc(weeklyHours.dayOfWeek), asc(weeklyHours.opensAt)),
+    replaceWeeklyHours: async (salonId: string, input: WeeklySchedule) => database.transaction(async (transaction) => {
+      await transaction.delete(weeklyHours).where(eq(weeklyHours.salonId, salonId));
+      if (input.periods.length > 0) await transaction.insert(weeklyHours).values(input.periods.map((period) => ({ salonId, ...period })));
+      return transaction.select().from(weeklyHours).where(eq(weeklyHours.salonId, salonId))
+        .orderBy(asc(weeklyHours.dayOfWeek), asc(weeklyHours.opensAt));
+    }),
   };
 }
 

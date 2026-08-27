@@ -9,6 +9,7 @@ import { createSalonRepository, type SalonRepository } from "./salon.repository.
 import {
   adminAssignmentSchema, adminSalonQuerySchema, profileUpdateSchema, salonCreateSchema, salonListQuerySchema, salonLookupSchema,
   salonUpdateSchema, serviceCreateSchema, serviceIdSchema, serviceUpdateSchema,
+  weeklyScheduleSchema,
 } from "./salon.validation.js";
 
 type Database = DatabaseConnection["database"];
@@ -113,6 +114,14 @@ export function createAdminSalonRouter(database: Database, environment: Environm
   router.get("/bookings", async (request, response) => {
     const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
     response.json({ data: await repository.listAdminBookings(salon.id), nextCursor: null });
+  });
+  router.get("/schedule/weekly", async (request, response) => {
+    const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
+    response.json({ data: { periods: await repository.listWeeklyHours(salon.id) } });
+  });
+  router.put("/schedule/weekly", async (request, response) => {
+    const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);
+    response.json({ data: { periods: await repository.replaceWeeklyHours(salon.id, weeklyScheduleSchema.parse(request.body)) } });
   });
   router.post("/services", async (request, response) => {
     const salon = await resolveManagedSalon(repository, request.authenticatedUser!, request.query);

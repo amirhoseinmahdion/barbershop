@@ -4,7 +4,7 @@ import { bookings, salons, services } from "../../database/schema.js";
 type Database = DatabaseConnection["database"];
 
 export function createBookingRepository(database: Database) {
-  async function availability(salonId: string, serviceId: string, localDate: string) {
+  async function slotOptions(salonId: string, serviceId: string, localDate: string) {
     const result = await database.execute(sql`
       with selected as (
         select s.id service_id, s.duration_minutes, sa.timezone
@@ -21,18 +21,21 @@ export function createBookingRepository(database: Database) {
         select generate_series(
           (${localDate}::date+p.opens_at) at time zone s.timezone,
           ((${localDate}::date+p.closes_at) at time zone s.timezone) - make_interval(mins=>s.duration_minutes),
-          interval '15 minutes'
+          make_interval(mins=>s.duration_minutes)
         ) starts_at, s.duration_minutes from periods p cross join selected s
-      ) select starts_at from slots
-      where starts_at > now() and not exists (
+      ) select starts_at, starts_at > now() and not exists (
         select 1 from bookings b where b.salon_id=${salonId} and b.status in ('PENDING','CONFIRMED')
         and tstzrange(b.starts_at,b.ends_at,'[)') && tstzrange(slots.starts_at,slots.starts_at+make_interval(mins=>slots.duration_minutes),'[)')
-      ) order by starts_at
+      ) is_available from slots order by starts_at
     `);
-    return (result.rows as Array<{ starts_at: Date }>).map((row) => new Date(row.starts_at).toISOString());
+    return (result.rows as Array<{ starts_at: Date; is_available: boolean }>).map((row) => ({ startsAt: new Date(row.starts_at).toISOString(), isAvailable: row.is_available }));
+  }
+  async function availability(salonId: string, serviceId: string, localDate: string) {
+    return (await slotOptions(salonId, serviceId, localDate)).filter((slot) => slot.isAvailable).map((slot) => slot.startsAt);
   }
   return {
     availability,
+    slotOptions,
     create: async (customerId: string, input: { salonId: string; serviceId: string; startsAt: string }) => database.transaction(async (tx) => {
       const service = await tx.query.services.findFirst({ where: and(eq(services.id, input.serviceId), eq(services.salonId, input.salonId), eq(services.isActive, true)) });
       const salon = await tx.query.salons.findFirst({ where: and(eq(salons.id, input.salonId), eq(salons.isActive, true)) });

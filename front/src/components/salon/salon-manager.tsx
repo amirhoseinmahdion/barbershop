@@ -14,23 +14,37 @@ interface AdminBooking {
   customer: { firstName: string; lastName: string; phone: string };
 }
 
+interface WeeklyPeriod { id?: string; dayOfWeek: number; opensAt: string; closesAt: string }
+const iranianWeekDays = [
+  { dayOfWeek: 6, label: "شنبه" },
+  { dayOfWeek: 0, label: "یکشنبه" },
+  { dayOfWeek: 1, label: "دوشنبه" },
+  { dayOfWeek: 2, label: "سه‌شنبه" },
+  { dayOfWeek: 3, label: "چهارشنبه" },
+  { dayOfWeek: 4, label: "پنجشنبه" },
+  { dayOfWeek: 5, label: "جمعه" },
+] as const;
+
 export function SalonManager() {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<SalonService[]>([]);
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [weeklyPeriods, setWeeklyPeriods] = useState<WeeklyPeriod[]>([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [salonPayload, servicePayload, bookingPayload] = await Promise.all([
+      const [salonPayload, servicePayload, bookingPayload, schedulePayload] = await Promise.all([
         apiRequest<{ data: { salon: Salon } }>("admin/salon"),
         apiRequest<{ data: SalonService[] }>("admin/services"),
         apiRequest<{ data: AdminBooking[] }>("admin/bookings"),
+        apiRequest<{ data: { periods: WeeklyPeriod[] } }>("admin/schedule/weekly"),
       ]);
       setSalon(salonPayload.data.salon);
       setServices(servicePayload.data);
       setBookings(bookingPayload.data);
+      setWeeklyPeriods(schedulePayload.data.periods);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -113,6 +127,28 @@ export function SalonManager() {
       setError(
         caught instanceof Error ? caught.message : "خدمت ویرایش نشد.",
       );
+    }
+  }
+
+  async function saveWeeklySchedule(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const periods = iranianWeekDays.flatMap(({ dayOfWeek }) => {
+      const opensAt = String(form.get(`opens-${dayOfWeek}`) ?? "");
+      const closesAt = String(form.get(`closes-${dayOfWeek}`) ?? "");
+      return opensAt && closesAt ? [{ dayOfWeek, opensAt, closesAt }] : [];
+    });
+    try {
+      const payload = await apiRequest<{ data: { periods: WeeklyPeriod[] } }>("admin/schedule/weekly", {
+        method: "PUT",
+        body: JSON.stringify({ periods }),
+      });
+      setWeeklyPeriods(payload.data.periods);
+      setMessage("ساعت کاری هفتگی ذخیره شد.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "ساعت کاری ذخیره نشد.");
     }
   }
 
@@ -206,6 +242,24 @@ export function SalonManager() {
         )}
       </section>
 
+      <form onSubmit={saveWeeklySchedule} className="rounded-2xl border border-stone-200 p-6">
+        <h2 className="text-xl font-bold">ساعت کاری هفتگی</h2>
+        <p className="mt-2 text-sm text-stone-600">برای روزهای تعطیل، هر دو ساعت را خالی بگذارید.</p>
+        <div className="mt-5 space-y-3">
+          {iranianWeekDays.map(({ dayOfWeek, label }) => {
+            const period = weeklyPeriods.find((item) => item.dayOfWeek === dayOfWeek);
+            return (
+              <div key={dayOfWeek} className="grid gap-3 rounded-xl bg-stone-100 p-4 sm:grid-cols-[8rem_1fr_1fr] sm:items-end">
+                <span className="font-semibold">{label}</span>
+                <PersianTimeInput name={`opens-${dayOfWeek}`} label="شروع" defaultValue={period?.opensAt.slice(0, 5) ?? ""} />
+                <PersianTimeInput name={`closes-${dayOfWeek}`} label="پایان" defaultValue={period?.closesAt.slice(0, 5) ?? ""} />
+              </div>
+            );
+          })}
+        </div>
+        <button className="mt-5 rounded-xl bg-amber-800 px-5 py-3 font-semibold text-white">ذخیره ساعت کاری</button>
+      </form>
+
       <section className="rounded-2xl border border-stone-200 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -259,6 +313,36 @@ export function SalonManager() {
         </button>
       </form>
     </div>
+  );
+}
+
+function PersianTimeInput({ name, label, defaultValue }: { name: string; label: string; defaultValue: string }) {
+  const initialHour = defaultValue ? String(Number(defaultValue.slice(0, 2)) % 12 || 12) : "";
+  const [hour, setHour] = useState(initialHour);
+  const [minute, setMinute] = useState(defaultValue ? defaultValue.slice(3, 5) : "00");
+  const [period, setPeriod] = useState<"AM" | "PM">(defaultValue && Number(defaultValue.slice(0, 2)) >= 12 ? "PM" : "AM");
+
+  const hour24 = hour ? (Number(hour) % 12) + (period === "PM" ? 12 : 0) : null;
+  const value = hour24 === null ? "" : `${String(hour24).padStart(2, "0")}:${minute}`;
+
+  return (
+    <fieldset className="text-sm font-medium text-stone-700">
+      <legend>{label}</legend>
+      <input type="hidden" name={name} value={value} />
+      <div className="mt-2 grid grid-cols-[1fr_1fr_1.5fr] gap-2" dir="rtl">
+        <select aria-label={`${label} ساعت`} value={hour} onChange={(event) => setHour(event.target.value)} className="rounded-xl border border-stone-300 bg-white px-2 py-3">
+          <option value="">--</option>
+          {Array.from({ length: 12 }, (_, index) => index + 1).map((item) => <option key={item} value={item}>{item.toLocaleString("fa-IR")}</option>)}
+        </select>
+        <select aria-label={`${label} دقیقه`} value={minute} onChange={(event) => setMinute(event.target.value)} disabled={!hour} className="rounded-xl border border-stone-300 bg-white px-2 py-3 disabled:opacity-50">
+          {Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0")).map((item) => <option key={item} value={item}>{Number(item).toLocaleString("fa-IR", { minimumIntegerDigits: 2 })}</option>)}
+        </select>
+        <select aria-label={`${label} بازه روز`} value={period} onChange={(event) => setPeriod(event.target.value as "AM" | "PM")} disabled={!hour} className="rounded-xl border border-stone-300 bg-white px-2 py-3 disabled:opacity-50">
+          <option value="AM">قبل‌ازظهر</option>
+          <option value="PM">بعدازظهر</option>
+        </select>
+      </div>
+    </fieldset>
   );
 }
 

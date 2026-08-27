@@ -189,7 +189,7 @@ describeSalons("profiles and salon management", () => {
     const ownService = await connection.database.query.services.findFirst({ where: (table, { and, eq }) => and(eq(table.salonId, salonOneId), eq(table.name, "Active Cut")) });
     const slots = await request(app).get(`/api/v1/salons/${salonOneId}/availability?serviceId=${ownService!.id}&date=2030-01-05`);
     expect(slots.body.data.slots.length).toBeGreaterThan(0);
-    expect(new Date(slots.body.data.slots[1]).getTime() - new Date(slots.body.data.slots[0]).getTime()).toBe(15 * 60 * 1000);
+    expect(new Date(slots.body.data.slots[1]).getTime() - new Date(slots.body.data.slots[0]).getTime()).toBe(ownService!.durationMinutes * 60 * 1000);
     const customer = await login("+989120000000");
     const created = await customer.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN)
       .send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[0] });
@@ -206,4 +206,24 @@ describeSalons("profiles and salon management", () => {
     expect((await admin.get(`/api/v1/admin/bookings?salonId=${salonTwoId}`)).status).toBe(403);
     expect((await admin.post("/api/v1/bookings").set("Origin", environment.FRONTEND_ORIGIN).send({ salonId: salonOneId, serviceId: ownService!.id, startsAt: slots.body.data.slots[1] })).status).toBe(403);
   });
+
+  it("lets only the assigned administrator replace weekly working hours", async () => {
+    const admin = await login("+16660000002");
+    const replaced = await admin.put("/api/v1/admin/schedule/weekly").set("Origin", environment.FRONTEND_ORIGIN).send({
+      periods: [{ dayOfWeek: 2, opensAt: "09:00", closesAt: "18:00" }],
+    });
+    expect(replaced.status).toBe(200);
+    expect(replaced.body.data.periods).toEqual([expect.objectContaining({ dayOfWeek: 2, opensAt: "09:00:00", closesAt: "18:00:00" })]);
+    expect((await admin.get("/api/v1/admin/schedule/weekly")).body.data.periods).toHaveLength(1);
+    expect((await admin.put("/api/v1/admin/schedule/weekly").set("Origin", environment.FRONTEND_ORIGIN).send({
+      periods: [
+        { dayOfWeek: 2, opensAt: "09:00", closesAt: "12:00" },
+        { dayOfWeek: 2, opensAt: "11:00", closesAt: "14:00" },
+      ],
+    })).status).toBe(422);
+    const customer = await login("+989120000000");
+    expect((await customer.get("/api/v1/admin/schedule/weekly")).status).toBe(403);
+  });
+
+
 });

@@ -5,6 +5,7 @@ import persian from "react-date-object/calendars/persian";
 import gregorian from "react-date-object/calendars/gregorian";
 import persianFa from "react-date-object/locales/persian_fa";
 import gregorianEn from "react-date-object/locales/gregorian_en";
+import { getCurrentBookingWeek } from "@/components/booking/booking-week";
 
 interface PersianDatePickerProps {
   value: string;
@@ -13,8 +14,9 @@ interface PersianDatePickerProps {
 }
 
 export default function PersianDatePicker({ value, onChange, disabled = false }: PersianDatePickerProps) {
-  const today = new DateObject({ calendar: persian, locale: persianFa });
-  const nextWeek = new DateObject(today).add(7, "days");
+  const { saturday, friday } = getCurrentBookingWeek();
+  const firstDayOfWeek = new DateObject({ date: saturday, calendar: gregorian }).convert(persian, persianFa);
+  const lastDayOfWeek = new DateObject({ date: friday, calendar: gregorian }).convert(persian, persianFa);
   const selectedValue = value
     ? new DateObject({ date: value, format: "YYYY-MM-DD", calendar: gregorian }).convert(persian)
     : null;
@@ -27,15 +29,16 @@ export default function PersianDatePicker({ value, onChange, disabled = false }:
   return (
     <div dir="rtl" className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
       <label className="block text-sm font-bold text-stone-800" htmlFor="reservation-date">تاریخ رزرو</label>
-      <p className="mt-1 text-xs text-stone-500">از امروز تا هفت روز آینده</p>
+      <p className="mt-1 text-xs text-stone-500">هفته جاری، از شنبه تا جمعه</p>
       <DatePicker
         id="reservation-date"
         value={selectedValue}
         onChange={selectDate}
         calendar={persian}
         locale={persianFa}
-        minDate={today}
-        maxDate={nextWeek}
+        weekStartDayIndex={0}
+        minDate={firstDayOfWeek}
+        maxDate={lastDayOfWeek}
         format="dddd، YYYY/MM/DD"
         calendarPosition="bottom-right"
         placeholder="انتخاب تاریخ"

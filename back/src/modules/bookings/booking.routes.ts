@@ -27,6 +27,7 @@ export function createAvailabilityRouter(database: Database) {
   const router=Router(); const repository=createBookingRepository(database);
   router.get("/:salonId/availability",async(request,response)=>{
     const salonId=bookingCreateSchema.shape.salonId.parse(request.params.salonId); const query=availabilityQuerySchema.parse(request.query);
-    response.json({data:{slots:await repository.availability(salonId,query.serviceId,query.date)}});
+    const allSlots=await repository.slotOptions(salonId,query.serviceId,query.date);
+    response.json({data:{slots:allSlots.filter((slot)=>slot.isAvailable).map((slot)=>slot.startsAt),allSlots}});
   }); return router;
 }

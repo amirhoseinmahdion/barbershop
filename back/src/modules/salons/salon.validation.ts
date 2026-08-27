@@ -59,8 +59,25 @@ export const serviceUpdateSchema = serviceCreateSchema.partial().extend({ isActi
 
 export const serviceIdSchema = z.uuid();
 
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+export const weeklyScheduleSchema = z.object({
+  periods: z.array(z.object({
+    dayOfWeek: z.number().int().min(0).max(6),
+    opensAt: timeSchema,
+    closesAt: timeSchema,
+  }).strict().refine((period) => period.opensAt < period.closesAt, "Opening time must be before closing time.")),
+}).strict().superRefine(({ periods }, context) => {
+  for (let day = 0; day <= 6; day += 1) {
+    const rows = periods.filter((period) => period.dayOfWeek === day).sort((a, b) => a.opensAt.localeCompare(b.opensAt));
+    for (let index = 1; index < rows.length; index += 1) {
+      if (rows[index]!.opensAt < rows[index - 1]!.closesAt) context.addIssue({ code: "custom", message: "Working periods cannot overlap.", path: ["periods"] });
+    }
+  }
+});
+
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;
 export type SalonUpdate = z.infer<typeof salonUpdateSchema>;
 export type SalonCreate = z.infer<typeof salonCreateSchema>;
 export type ServiceCreate = z.infer<typeof serviceCreateSchema>;
 export type ServiceUpdate = z.infer<typeof serviceUpdateSchema>;
+export type WeeklySchedule = z.infer<typeof weeklyScheduleSchema>;

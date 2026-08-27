@@ -16,11 +16,11 @@ export function ReservationPicker({ salonId, services }: { salonId: string; serv
   const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
   async function findTimes(nextDate = date, nextServiceId = serviceId) {
     setError("");
     setMessage("");
     setSelectedSlot("");
+    setSlots([]);
     if (!nextServiceId || !nextDate) return;
     setLoading(true);
     setHasSearched(true);
