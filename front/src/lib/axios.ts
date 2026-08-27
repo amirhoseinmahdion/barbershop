@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { getApiUrl } from "./api-url";
 
 const createClient = (): AxiosInstance => {
-  const baseURL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+  const baseURL = getApiUrl();
   const client = axios.create({
     baseURL: baseURL.replace(/\/$/, ""),
     withCredentials: true,
