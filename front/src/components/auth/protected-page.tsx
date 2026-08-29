@@ -130,7 +130,13 @@ export function ProtectedPage({
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-bold">پروفایل کاربری</h2>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-              {{ CUSTOMER: "مشتری", SALON_ADMIN: "مدیر سالن", SUPER_ADMIN: "مدیر کل" }[user.role]}
+              {
+                {
+                  CUSTOMER: "مشتری",
+                  SALON_ADMIN: "مدیر سالن",
+                  SUPER_ADMIN: "مدیر کل",
+                }[user.role]
+              }
             </span>
           </div>
           {/* <p className="mt-2 text-sm text-stone-600">

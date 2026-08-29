@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { authRequest, destinationForRole } from "@/lib/auth";
+import { Field } from "@/helper/form";
+import { snackbar } from "@/helper/snackbar";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -12,13 +14,11 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const isRegistration = mode === "register";
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
     const form = new FormData(event.currentTarget);
     const values = {
       firstName: String(form.get("firstName") ?? "").trim(),
@@ -40,8 +40,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       validationErrors.email = "یک ایمیل معتبر وارد کنید.";
     if (!values.password) validationErrors.password = "رمز عبور الزامی است.";
     else if (isRegistration && values.password.length < 8)
-      validationErrors.password =
-        "رمز عبور باید حداقل ۸ نویسه داشته باشد.";
+      validationErrors.password = "رمز عبور باید حداقل ۸ نویسه داشته باشد.";
     setFieldErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
     setIsSubmitting(true);
@@ -61,12 +60,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         method: "POST",
         body: JSON.stringify(body),
       });
+      snackbar(
+        isRegistration
+          ? "ثبت‌نام با موفقیت انجام شد."
+          : "ورود با موفقیت انجام شد.",
+        "success",
+      );
       router.replace(destinationForRole(user.role));
     } catch (caughtError) {
-      setError(
+      snackbar(
         caughtError instanceof Error
           ? caughtError.message
           : "ورود یا ثبت‌نام انجام نشد.",
+        "error",
       );
       setIsSubmitting(false);
     }
@@ -116,15 +122,6 @@ export function AuthForm({ mode }: AuthFormProps) {
         error={fieldErrors.password}
       />
 
-      {error ? (
-        <p
-          role="alert"
-          className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
-          {error}
-        </p>
-      ) : null}
-
       <button
         disabled={isSubmitting}
         className="w-full rounded-xl bg-stone-900 px-5 py-3 font-semibold text-white transition hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60"
@@ -136,7 +133,9 @@ export function AuthForm({ mode }: AuthFormProps) {
             : "ورود"}
       </button>
       <p className="text-center text-sm text-stone-600">
-        {isRegistration ? "قبلاً ثبت‌نام کرده‌اید؟" : "هنوز حساب کاربری ندارید؟"}{" "}
+        {isRegistration
+          ? "قبلاً ثبت‌نام کرده‌اید؟"
+          : "هنوز حساب کاربری ندارید؟"}{" "}
         <Link
           className="font-semibold text-amber-900 underline-offset-4 hover:underline"
           href={isRegistration ? "/login" : "/register"}
@@ -145,49 +144,5 @@ export function AuthForm({ mode }: AuthFormProps) {
         </Link>
       </p>
     </form>
-  );
-}
-
-interface FieldProps {
-  label: string;
-  name: string;
-  type?: string;
-  autoComplete: string;
-  required?: boolean;
-  minLength?: number;
-  error?: string;
-}
-
-function Field({
-  label,
-  name,
-  type = "text",
-  autoComplete,
-  required = true,
-  minLength,
-  error,
-}: FieldProps) {
-  return (
-    <label className="block text-sm font-medium text-stone-700">
-      {label}
-      <input
-        className={`mt-2 w-full rounded-xl border bg-white px-4 py-3 outline-none transition ${error ? "border-red-500 text-red-900 focus:border-red-600 focus:ring-2 focus:ring-red-100" : "border-stone-300 focus:border-amber-800 focus:ring-2 focus:ring-amber-100"}`}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        required={required}
-        minLength={minLength}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${name}-error` : undefined}
-      />
-      {error ? (
-        <span
-          id={`${name}-error`}
-          className="mt-2 block text-sm font-medium text-red-600"
-        >
-          {error}
-        </span>
-      ) : null}
-    </label>
   );
 }

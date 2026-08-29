@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 const email = z.string().trim().email().max(254).transform((value) => value.toLowerCase());
-const phone = z.string().trim().regex(/^\+?[0-9]{7,15}$/, "Enter a valid phone number using 7 to 15 digits.");
+const phone = z.string().trim().regex(/^\+?[0-9]{7,15}$/, "شماره تلفن باید بین ۷ تا ۱۵ رقم باشد و می‌تواند با + شروع شود.");
 const password = z
   .string()
   .min(8)
   .max(72)
-  .regex(/[a-z]/, "Password must include a lowercase letter.")
-  .regex(/[A-Z]/, "Password must include an uppercase letter.")
-  .regex(/[0-9]/, "Password must include a number.");
+  .regex(/[a-z]/, "رمز عبور باید حداقل یک حرف کوچک انگلیسی داشته باشد.")
+  .regex(/[A-Z]/, "رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.")
+  .regex(/[0-9]/, "رمز عبور باید حداقل یک عدد داشته باشد.");
 
 export const registerSchema = z
   .object({

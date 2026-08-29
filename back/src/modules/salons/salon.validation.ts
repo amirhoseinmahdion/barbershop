@@ -8,7 +8,7 @@ export const profileUpdateSchema = z.object({
   lastName: requiredText(80).optional(),
   phone: z.string().trim().min(7).max(30).optional(),
   profileImageUrl: z.url().max(2048).nullable().optional(),
-}).strict().refine((value) => Object.keys(value).length > 0, "At least one profile field is required.");
+}).strict().refine((value) => Object.keys(value).length > 0, "حداقل یکی از اطلاعات پروفایل باید ارسال شود.");
 
 export const salonListQuerySchema = z.object({
   audience: z.enum(["MEN", "WOMEN", "UNISEX"]).optional(),
@@ -33,7 +33,7 @@ export const salonUpdateSchema = z.object({
   phone: optionalText(30),
   email: z.email().toLowerCase().nullable().optional(),
   timezone: requiredText(100).optional(),
-}).strict().refine((value) => Object.keys(value).length > 0, "At least one salon field is required.");
+}).strict().refine((value) => Object.keys(value).length > 0, "حداقل یکی از اطلاعات سالن باید ارسال شود.");
 
 export const salonCreateSchema = z.object({
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120),
@@ -55,7 +55,7 @@ export const serviceCreateSchema = z.object({
 }).strict();
 
 export const serviceUpdateSchema = serviceCreateSchema.partial().extend({ isActive: z.boolean().optional() })
-  .strict().refine((value) => Object.keys(value).length > 0, "At least one service field is required.");
+  .strict().refine((value) => Object.keys(value).length > 0, "حداقل یکی از اطلاعات خدمت باید ارسال شود.");
 
 export const serviceIdSchema = z.uuid();
 
@@ -65,12 +65,12 @@ export const weeklyScheduleSchema = z.object({
     dayOfWeek: z.number().int().min(0).max(6),
     opensAt: timeSchema,
     closesAt: timeSchema,
-  }).strict().refine((period) => period.opensAt < period.closesAt, "Opening time must be before closing time.")),
+  }).strict().refine((period) => period.opensAt < period.closesAt, "زمان شروع باید قبل از زمان پایان باشد.")),
 }).strict().superRefine(({ periods }, context) => {
   for (let day = 0; day <= 6; day += 1) {
     const rows = periods.filter((period) => period.dayOfWeek === day).sort((a, b) => a.opensAt.localeCompare(b.opensAt));
     for (let index = 1; index < rows.length; index += 1) {
-      if (rows[index]!.opensAt < rows[index - 1]!.closesAt) context.addIssue({ code: "custom", message: "Working periods cannot overlap.", path: ["periods"] });
+      if (rows[index]!.opensAt < rows[index - 1]!.closesAt) context.addIssue({ code: "custom", message: "بازه‌های کاری نباید با یکدیگر هم‌پوشانی داشته باشند.", path: ["periods"] });
     }
   }
 });

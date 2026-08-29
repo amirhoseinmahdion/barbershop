@@ -14,12 +14,12 @@ export function createBookingRouter(database: Database, environment: Environment
   router.post("/", authenticate(auth,environment), authorize("CUSTOMER"), async (request,response)=>{
     const input=bookingCreateSchema.parse(request.body);
     const [salon] = await database.select().from(salons).where(eq(salons.id, input.salonId)).limit(1);
-    if (!salon) throw new AppError(404,"SALON_NOT_FOUND","The salon was not found.");
+    if (!salon) throw new AppError(404,"SALON_NOT_FOUND","سالن پیدا نشد.");
     const localDate=new Intl.DateTimeFormat("en-CA",{timeZone:salon.timezone,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(input.startsAt));
     const slots=await repository.availability(input.salonId,input.serviceId,localDate);
-    if (!slots.includes(new Date(input.startsAt).toISOString())) throw new AppError(409,"TIME_UNAVAILABLE","This time is no longer available.");
+    if (!slots.includes(new Date(input.startsAt).toISOString())) throw new AppError(409,"TIME_UNAVAILABLE","این زمان دیگر در دسترس نیست.");
     const booking=await repository.create(request.authenticatedUser!.id,input);
-    if (!booking) throw new AppError(422,"INVALID_SERVICE","The salon or service is unavailable.");
+    if (!booking) throw new AppError(422,"INVALID_SERVICE","سالن یا خدمت انتخاب‌شده در دسترس نیست.");
     response.status(201).json({data:{booking}});
   }); return router;
 }

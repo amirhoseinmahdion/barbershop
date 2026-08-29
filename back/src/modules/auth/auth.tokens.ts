@@ -56,7 +56,7 @@ export function verifyAccessToken(token: string, environment: Environment): Acce
     if (typeof claims === "string" || claims.type !== "access" || !claims.sub || !claims.role) throw new Error();
     return claims as AccessClaims;
   } catch {
-    throw new AppError(401, "UNAUTHENTICATED", "Authentication is required.");
+    throw new AppError(401, "UNAUTHENTICATED", "برای ادامه باید وارد حساب کاربری شوید.");
   }
 }
 
@@ -66,7 +66,7 @@ export function verifyRefreshToken(token: string, environment: Environment): Ref
     if (typeof claims === "string" || claims.type !== "refresh" || !claims.sub || !claims.sid) throw new Error();
     return claims as RefreshClaims;
   } catch {
-    throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+    throw new AppError(401, "INVALID_SESSION", "نشست کاربری نامعتبر است یا منقضی شده است.");
   }
 }
 

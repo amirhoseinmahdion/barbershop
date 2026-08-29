@@ -2,16 +2,19 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import type { Salon } from "@/types/salon";
+import { snackbar } from "@/helper/snackbar";
 
 export function PlatformManager() {
   const [salons, setSalons] = useState<Salon[]>([]);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deletingSalonId, setDeletingSalonId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     const result = await apiRequest<{ data: Salon[] }>("platform/salons");
     setSalons(result.data);
   }, []);
+
+
   useEffect(() => {
     const timer = window.setTimeout(
       () => void load().catch((e: Error) => setError(e.message)),
@@ -19,6 +22,7 @@ export function PlatformManager() {
     );
     return () => clearTimeout(timer);
   }, [load]);
+
   async function createSalon(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -35,16 +39,14 @@ export function PlatformManager() {
         }),
       });
       formElement.reset();
-      setMessage("سالن ایجاد شد.");
+      snackbar("سالن ایجاد شد.", "success");
       await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "سالن ایجاد نشد.");
+    } catch {
+      snackbar("ایجاد سالن انجام نشد.", "error");
     }
   }
   async function assign(event: FormEvent<HTMLFormElement>, salonId: string) {
     event.preventDefault();
-    setError("");
-    setMessage("");
     const formElement = event.currentTarget;
     const phone = new FormData(formElement).get("adminPhone");
     try {
@@ -53,25 +55,21 @@ export function PlatformManager() {
         body: JSON.stringify({ phone }),
       });
       formElement.reset();
-      setMessage("مدیر سالن تعیین شد.");
+      snackbar("مدیر سالن تعیین شد.", "success");
       await load();
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "تعیین مدیر سالن انجام نشد.",
-      );
+    } catch {
+      snackbar("تعیین مدیر سالن انجام نشد.", "error");
     }
   }
 
   async function deleteSalon(salon: Salon) {
-    setError("");
-    setMessage("");
     setDeletingSalonId(salon.id);
     try {
       await apiRequest(`platform/salons/${salon.id}`, { method: "DELETE" });
       setSalons((current) => current.filter((item) => item.id !== salon.id));
-      setMessage("سالن حذف شد.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "سالن حذف نشد.");
+      snackbar("سالن حذف شد.", "success");
+    } catch {
+      snackbar("حذف سالن انجام نشد.", "error");
     } finally {
       setDeletingSalonId(null);
     }
@@ -79,14 +77,6 @@ export function PlatformManager() {
 
   return (
     <div className="mt-10 space-y-8">
-      {message ? (
-        <p
-          role="status"
-          className="rounded-xl bg-emerald-50 p-3 text-emerald-800"
-        >
-          {message}
-        </p>
-      ) : null}
       {error ? (
         <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-700">
           {error}
@@ -99,7 +89,11 @@ export function PlatformManager() {
         <h2 className="text-xl font-bold">افزودن سالن </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field name="name" label="نام سالن" />
-          <Field name="slug" label="نام انگلیسی نشانی اینترنتی" placeholder="central-salon" />
+          <Field
+            name="slug"
+            label="نام انگلیسی نشانی اینترنتی"
+            placeholder="central-salon"
+          />
           <Field name="streetAddress" label="نشانی" />
           <label className="text-sm font-medium">
             نوع سالن
@@ -126,10 +120,8 @@ export function PlatformManager() {
             {salons.map((salon) => (
               <li key={salon.id} className="rounded-2xl bg-stone-100 p-5">
                 <p className="font-bold">{salon.name}</p>
-                <p className="text-sm text-stone-600">
-                  {salon.streetAddress}
-                </p>
-            
+                <p className="text-sm text-stone-600">{salon.streetAddress}</p>
+
                 <form
                   onSubmit={(event) => void assign(event, salon.id)}
                   className="mt-4 flex gap-2"

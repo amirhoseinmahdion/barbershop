@@ -27,10 +27,10 @@ export function createAuthService(repository: AuthRepository, environment: Envir
   return {
     register: async (input: RegisterInput) => {
       if (input.email && await repository.findUserByEmail(input.email)) {
-        throw new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists.");
+        throw new AppError(409, "EMAIL_ALREADY_EXISTS", "حسابی با این ایمیل از قبل وجود دارد.");
       }
       if (await repository.findUserByPhone(input.phone)) {
-        throw new AppError(409, "PHONE_ALREADY_EXISTS", "An account with this phone number already exists.");
+        throw new AppError(409, "PHONE_ALREADY_EXISTS", "حسابی با این شماره تلفن از قبل وجود دارد.");
       }
       const user = await repository.createCustomer({
         email: input.email ?? null,
@@ -40,13 +40,13 @@ export function createAuthService(repository: AuthRepository, environment: Envir
         phone: input.phone,
         role: "CUSTOMER",
       });
-      if (!user) throw new AppError(500, "ACCOUNT_CREATE_FAILED", "The account could not be created.");
+      if (!user) throw new AppError(500, "ACCOUNT_CREATE_FAILED", "ساخت حساب کاربری انجام نشد.");
       return issueSession(toSafeUser(user));
     },
     login: async (input: LoginInput) => {
       const user = await repository.findUserByPhone(input.phone);
       if (!user || !user.isActive || !(await bcrypt.compare(input.password, user.passwordHash))) {
-        throw new AppError(401, "INVALID_CREDENTIALS", "Phone number or password is incorrect.");
+        throw new AppError(401, "INVALID_CREDENTIALS", "تلفن همراه یا رمز عبور اشتباه است.");
       }
       return issueSession(toSafeUser(user));
     },
@@ -54,10 +54,10 @@ export function createAuthService(repository: AuthRepository, environment: Envir
       const claims = verifyRefreshToken(rawRefreshToken, environment);
       const session = await repository.findValidSession(claims.sid, claims.sub);
       if (!session || session.refreshTokenHash !== hashRefreshToken(rawRefreshToken)) {
-        throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+        throw new AppError(401, "INVALID_SESSION", "نشست کاربری نامعتبر است یا منقضی شده است.");
       }
       const userRecord = await repository.findActiveUserById(claims.sub);
-      if (!userRecord) throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+      if (!userRecord) throw new AppError(401, "INVALID_SESSION", "نشست کاربری نامعتبر است یا منقضی شده است.");
       const user = toSafeUser(userRecord);
       const tokens = createSessionTokens(user, claims.sid, environment);
       const rotated = await repository.rotateSession(
@@ -66,7 +66,7 @@ export function createAuthService(repository: AuthRepository, environment: Envir
         hashRefreshToken(tokens.refreshToken),
         tokens.refreshExpiresAt,
       );
-      if (!rotated) throw new AppError(401, "INVALID_SESSION", "The session has already been rotated.");
+      if (!rotated) throw new AppError(401, "INVALID_SESSION", "نشست کاربری قبلاً نوسازی شده است.");
       return { user, ...tokens };
     },
     logout: async (rawRefreshToken: string | undefined) => {

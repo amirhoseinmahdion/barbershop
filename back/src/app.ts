@@ -66,7 +66,7 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
     app.use("/api/v1", (request, _response, next) => {
       const origin = request.get("origin");
       if (request.method !== "GET" && origin && origin !== frontendOrigin) {
-        return next(new AppError(403, "UNTRUSTED_ORIGIN", "The request origin is not allowed."));
+        return next(new AppError(403, "UNTRUSTED_ORIGIN", "مبدأ درخواست مجاز نیست."));
       }
       next();
     });
@@ -83,7 +83,7 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
     response.status(404).json({
       error: {
         code: "NOT_FOUND",
-        message: "The requested resource was not found.",
+        message: "منبع درخواستی پیدا نشد.",
       },
     });
   });
@@ -94,8 +94,12 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
       response.status(422).json({
         error: {
           code: "VALIDATION_ERROR",
-          message: "The submitted data is invalid.",
-          details: error.flatten(),
+          message: "اطلاعات ارسال‌شده معتبر نیست.",
+          details: error.flatten((issue) =>
+            /[\u0600-\u06ff]/.test(issue.message)
+              ? issue.message
+              : "مقدار واردشده معتبر نیست.",
+          ),
         },
       });
       return;
@@ -110,16 +114,16 @@ export function createApp({ frontendOrigin, readinessCheck, database, environmen
     const databaseCode = databaseError?.code ?? databaseError?.cause?.code;
     if (databaseCode === "23505") {
       response.status(409).json({
-        error: { code: "RESOURCE_CONFLICT", message: "The resource already exists.", details: null },
+        error: { code: "RESOURCE_CONFLICT", message: "این مورد از قبل وجود دارد.", details: null },
       });
       return;
     }
     if (databaseCode === "23P01" || databaseCode === "40P01") {
-      response.status(409).json({ error: { code: "TIME_UNAVAILABLE", message: "This time is no longer available.", details: null } });
+      response.status(409).json({ error: { code: "TIME_UNAVAILABLE", message: "این زمان دیگر در دسترس نیست.", details: null } });
       return;
     }
     response.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred.", details: null },
+      error: { code: "INTERNAL_ERROR", message: "خطای غیرمنتظره‌ای رخ داد.", details: null },
     });
   });
 

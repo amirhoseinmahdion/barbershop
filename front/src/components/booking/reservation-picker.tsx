@@ -5,6 +5,7 @@ import { useState } from "react";
 import PersianDatePicker from "@/components/helper/PersianDatePicker";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import type { SalonService } from "@/types/salon";
+import { snackbar } from "@/helper/snackbar";
 
 export function ReservationPicker({ salonId, services }: { salonId: string; services: SalonService[] }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
@@ -31,7 +32,7 @@ export function ReservationPicker({ salonId, services }: { salonId: string; serv
       setSlots(payload.data.slots);
     } catch (caught) {
       setSlots([]);
-      setError(caught instanceof Error ? caught.message : "زمان‌های آزاد دریافت نشد.");
+      snackbar(caught instanceof Error ? caught.message : "زمان‌های آزاد دریافت نشد.", "error");
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ export function ReservationPicker({ salonId, services }: { salonId: string; serv
     try {
       await apiRequest("bookings", { method: "POST", body: JSON.stringify({ salonId, serviceId, startsAt: selectedSlot }) });
       await findTimes(date, serviceId);
-      setMessage("رزرو شما با موفقیت ثبت شد.");
+      snackbar("رزرو شما با موفقیت ثبت شد.", "success");
     } catch (caught) {
       const reservationError =
         caught instanceof ApiRequestError && caught.status === 401

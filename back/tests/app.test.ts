@@ -81,3 +81,18 @@ describe("API documentation", () => {
     expect(response.text).toContain("Hair Salon Platform API");
   });
 });
+
+describe("client-facing errors", () => {
+  it("returns Persian text for unknown routes", async () => {
+    const app = createApp({ frontendOrigin: "http://localhost:3000", readinessCheck: () => Promise.resolve() });
+    const response = await request(app).get("/missing-route");
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
+      error: {
+        code: "NOT_FOUND",
+        message: "منبع درخواستی پیدا نشد.",
+      },
+    });
+  });
+});

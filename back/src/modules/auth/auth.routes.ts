@@ -38,7 +38,7 @@ export function createAuthRouter(database: DatabaseConnection["database"], envir
 
   router.post("/refresh", async (request, response) => {
     const token = (request.cookies as Record<string, string | undefined>)[refreshCookieName];
-    if (!token) throw new AppError(401, "INVALID_SESSION", "The session is invalid or expired.");
+    if (!token) throw new AppError(401, "INVALID_SESSION", "نشست کاربری نامعتبر است یا منقضی شده است.");
     const session = await service.refresh(token);
     setSessionCookies(response, session, environment);
     response.status(200).json({ data: { user: session.user } });
