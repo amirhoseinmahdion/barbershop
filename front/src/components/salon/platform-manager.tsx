@@ -2,7 +2,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import type { Salon } from "@/types/salon";
-import { snackbar } from "@/helper/snackbar";
+import { snackbar } from "@/components/helper/snackbar";
 
 export function PlatformManager() {
   const [salons, setSalons] = useState<Salon[]>([]);
@@ -154,6 +154,14 @@ export function PlatformManager() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 function Field({
   label,
   ...props

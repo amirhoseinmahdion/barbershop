@@ -3,34 +3,12 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import type { Salon, SalonService } from "@/types/salon";
-import { snackbar } from "@/helper/snackbar";
-import { PersianTimeInput } from "@/helper/persiantimeinput";
+import { snackbar } from "@/components/helper/snackbar";
+import { PersianTimeInput } from "@/components/helper/persiantimeinput";
+import { AdminBooking, WeeklyPeriod } from "@/types/type";
+import { iranianWeekDays } from "@/constant/constant";
 
-interface AdminBooking {
-  id: string;
-  startsAt: string;
-  endsAt: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
-  serviceName: string;
-  durationMinutes: number;
-  customer: { firstName: string; lastName: string; phone: string };
-}
 
-interface WeeklyPeriod {
-  id?: string;
-  dayOfWeek: number;
-  opensAt: string;
-  closesAt: string;
-}
-const iranianWeekDays = [
-  { dayOfWeek: 6, label: "شنبه" },
-  { dayOfWeek: 0, label: "یکشنبه" },
-  { dayOfWeek: 1, label: "دوشنبه" },
-  { dayOfWeek: 2, label: "سه‌شنبه" },
-  { dayOfWeek: 3, label: "چهارشنبه" },
-  { dayOfWeek: 4, label: "پنجشنبه" },
-  { dayOfWeek: 5, label: "جمعه" },
-] as const;
 
 export function SalonManager() {
   const [salon, setSalon] = useState<Salon | null>(null);

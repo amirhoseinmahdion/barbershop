@@ -7,20 +7,13 @@ import {
   logoutSession,
   restoreSession,
   type AuthenticatedUser,
-  type UserRole,
 } from "@/lib/auth";
 import { apiRequest } from "@/lib/api";
 import { SalonManager } from "@/components/salon/salon-manager";
 import { PlatformManager } from "@/components/salon/platform-manager";
+import { ProtectedPageProps } from "@/types/type";
 
-interface ProtectedPageProps {
-  allowedRole: UserRole;
-  eyebrow: string;
-  title: string;
-  description: string;
-  manageSalon?: boolean;
-  managePlatform?: boolean;
-}
+
 
 export function ProtectedPage({
   allowedRole,
@@ -109,12 +102,6 @@ export function ProtectedPage({
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-800">
               {eyebrow}
             </p>
-            {/* <h1 className="mt-3 text-4xl font-bold tracking-tight text-stone-900">
-              {title}
-            </h1>
-            <p className="mt-4 max-w-2xl leading-7 text-stone-600">
-              {description}
-            </p> */}
           </div>
           <button
             onClick={logout}
@@ -139,9 +126,6 @@ export function ProtectedPage({
               }
             </span>
           </div>
-          {/* <p className="mt-2 text-sm text-stone-600">
-            {user.email ?? "ایمیلی ثبت نشده است"}
-          </p> */}
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <label className="text-sm font-medium">
               نام

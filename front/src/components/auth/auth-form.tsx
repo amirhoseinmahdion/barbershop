@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { authRequest, destinationForRole } from "@/lib/auth";
-import { Field } from "@/helper/form";
-import { snackbar } from "@/helper/snackbar";
+import { Field } from "@/components/helper/form";
+import { snackbar } from "@/components/helper/snackbar";
+import { AuthFormProps } from "@/types/type";
 
-interface AuthFormProps {
-  mode: "login" | "register";
-}
+
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();

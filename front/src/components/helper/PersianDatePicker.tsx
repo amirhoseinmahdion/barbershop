@@ -6,12 +6,9 @@ import gregorian from "react-date-object/calendars/gregorian";
 import persianFa from "react-date-object/locales/persian_fa";
 import gregorianEn from "react-date-object/locales/gregorian_en";
 import { getCurrentBookingWeek } from "@/components/booking/booking-week";
+import { PersianDatePickerProps } from "@/types/type";
 
-interface PersianDatePickerProps {
-  value: string;
-  onChange: (gregorianDate: string) => void;
-  disabled?: boolean;
-}
+
 
 export default function PersianDatePicker({ value, onChange, disabled = false }: PersianDatePickerProps) {
   const { saturday, friday } = getCurrentBookingWeek();

@@ -1,5 +1,5 @@
 import { AuthForm } from "@/components/auth/auth-form";
-import { AuthShell } from "@/helper/authshell";
+import { AuthShell } from "@/components/helper/authshell";
 
 export default function LoginPage() {
   return (

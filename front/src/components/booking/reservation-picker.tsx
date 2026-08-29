@@ -5,7 +5,7 @@ import { useState } from "react";
 import PersianDatePicker from "@/components/helper/PersianDatePicker";
 import { apiRequest, ApiRequestError } from "@/lib/api";
 import type { SalonService } from "@/types/salon";
-import { snackbar } from "@/helper/snackbar";
+import { snackbar } from "@/components/helper/snackbar";
 
 export function ReservationPicker({ salonId, services }: { salonId: string; services: SalonService[] }) {
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
@@ -17,6 +17,10 @@ export function ReservationPicker({ salonId, services }: { salonId: string; serv
   const [hasSearched, setHasSearched] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+
+
+
   async function findTimes(nextDate = date, nextServiceId = serviceId) {
     setError("");
     setMessage("");
@@ -48,12 +52,15 @@ export function ReservationPicker({ salonId, services }: { salonId: string; serv
       await findTimes(date, serviceId);
       snackbar("رزرو شما با موفقیت ثبت شد.", "success");
     } catch (caught) {
-      const reservationError =
+      snackbar(
         caught instanceof ApiRequestError && caught.status === 401
           ? "برای رزرو نوبت ابتدا به‌عنوان مشتری وارد شوید."
-          : caught instanceof Error ? caught.message : "رزرو نوبت انجام نشد.";
+          : caught instanceof Error
+            ? caught.message
+            : "رزرو نوبت انجام نشد.",
+        "error",
+      );
       await findTimes(date, serviceId);
-      setError(reservationError);
     } finally {
       setReserving(false);
     }

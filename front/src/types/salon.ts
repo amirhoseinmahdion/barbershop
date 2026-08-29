@@ -22,7 +22,6 @@ export interface Salon {
     lastName: string;
   }>;
 }
-
 export interface SalonService {
   id: string;
   salonId: string;

@@ -1,6 +1,6 @@
 import { audiences, benefits } from "@/constant/constant";
-import { BookingPreview } from "@/helper/function";
-import { ArrowLeftIcon, CheckIcon, SparkleIcon } from "@/helper/icon";
+import { BookingPreview } from "@/components/helper/function";
+import { ArrowLeftIcon, CheckIcon, SparkleIcon } from "@/components/helper/icon";
 import Link from "next/link";
 
 export default function HomePage() {
